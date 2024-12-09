@@ -1,0 +1,12 @@
+name: minmo_study
+
+channels:
+  - defaults
+  - anaconda
+  - pip
+dependencies:
+  - python
+  - pip
+  - scipy
+  - pip:
+    - nibabel
