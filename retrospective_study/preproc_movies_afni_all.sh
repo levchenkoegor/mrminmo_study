@@ -7,6 +7,7 @@
 export proj_folder=/data/elevchenko/MinMo_movements/retrospective_study
 max_jobs=8  # Set maximum number of parallel jobs
 
+
 for dataset in "NNdb" "BTF"; do
 
   if [ "$dataset" == "NNdb" ]; then
@@ -62,7 +63,6 @@ for dataset in "NNdb" "BTF"; do
             n_trs_remove="8 16 16 16"
         fi
       fi
-
 
       afni_proc.py \
           -subj_id "$subj_id" \
