@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # running on dummy data?
-export dummydata=0
+export dummydata=1
 
 # Paths
 if [[ "$dummydata" -eq 1 ]]; then
