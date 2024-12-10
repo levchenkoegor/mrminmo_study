@@ -121,12 +121,14 @@ root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives')
 stim_fldr = Path(root_fldr / 'stimuli')
 
+run_lengths = [505, 505, 505]
+
 # Define parameters for ERP extraction
 sampling_interval = 0.8
 pre_onset_duration = 3  # seconds before onset
 post_onset_duration = 8  # seconds after onset
 
-subjects = ['dummydata_nii', '241031DC_nii', '241031JC_nii']
+subjects = ['dummydata_nii']
 
 # Load sequences of conditions and runs from CSV
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
@@ -141,7 +143,7 @@ for subj_id in subjects:
         for movement_type in ['cough', 'crosslegsleftontop', 'crosslegsrightontop', 'raiselefthip', 'raiserighthip', 'lefthandtorightthigh',
                               'righthandtoleftthigh', 'sayHellotheremum', 'scratchleftcheek', 'scratchrightcheek']:
 
-            data_file = Path(deriv_folder / f'sub-{subj_id}/sub-{subj_id}_task-mvts_cond-{cond_name}/sub-{subj_id}_task-mvts_cond-{cond_name}.results/dfile_rall.1D')
+            data_file = Path(deriv_fldr / f'sub-{subj_id}/sub-{subj_id}_task-mvts_cond-{cond_name}/sub-{subj_id}_task-mvts_cond-{cond_name}.results/dfile_rall.1D')
             timing_file = Path(stim_fldr / f'condition-{movement_type}_run-all.1D')
 
             # Load the movement data and timing data
@@ -187,4 +189,4 @@ for subj_id in subjects:
             time_window_corrected = np.linspace(-pre_onset_duration, post_onset_duration, window_size)
 
             # Plot each trial separately and save the plots
-            plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, save_dir)
+            plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, Path(deriv_fldr / 'ERP-like_plots' / subj_id))
