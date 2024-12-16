@@ -39,6 +39,10 @@ print('Loading movement timestamps...')
 file_paths = sorted(stim_path.glob('condition*.1D'))
 data_lines = []
 
+n_spare_trs, tr_duration = 10, 0.8
+spare_secs = int(n_spare_trs * tr_duration) # timing files don't take into account spare TRs
+# (makes sense for AFNI but not for dummy data generation)
+
 for line_idx in range(sum(1 for _ in open(file_paths[0]))):
     row = []
     for file in file_paths:
@@ -48,33 +52,30 @@ for line_idx in range(sum(1 for _ in open(file_paths[0]))):
         except Exception as e:
             print(f"Error reading {file}: {e}")
             continue
-    row = np.concatenate(row)
-    row = sorted([int(number) for number in row])
-    data_lines.append(row)
 
+    row = np.concatenate(row)
+    row = sorted([int(number)+spare_secs for number in row])
+    data_lines.append(row)
 
 # Movement parameters
 max_timestamps = max(len(run) for run in data_lines)
 rotation_angles = np.random.uniform(-2, 2, size=(max_timestamps, 3))
 translations = np.random.uniform(-1, 1, size=(max_timestamps, 3))
 
-# Apply movement to create moving dummy EPI
-epi_to_move = non_moving_epi.copy()
-
 # Define window movements size
 window_size = 5  # TR = 0.8 seconds (6 * 0.8 = 4.8)
-tr_duration = 0.8  # TR duration in seconds
 window_volumes = int(window_size / tr_duration)  # Number of volumes in the window
 
 for run_i, run_timestamps in enumerate(data_lines[3:], 4):
+    # Reset epi_to_move for each run
+    epi_to_move = non_moving_epi.copy()
+
     for ts_i, timestamp in enumerate(run_timestamps):
         # Convert timestamp (seconds) to TR index
         tr_index = int(round(timestamp / tr_duration))  # Round to nearest TR index
 
         for offset in range(window_volumes):
             vol_to_transform = tr_index + offset
-            if vol_to_transform >= n:  # Skip if window exceeds total volumes
-                break
 
             # Generate rotation and translation matrices
             rotation = R.from_euler('xyz', rotation_angles[ts_i], degrees=True).as_matrix()
@@ -84,7 +85,7 @@ for run_i, run_timestamps in enumerate(data_lines[3:], 4):
 
             # Apply transformation
             epi_to_move[..., vol_to_transform] = affine_transform(
-                epi_to_move[..., vol_to_transform],
+                non_moving_epi[..., vol_to_transform],
                 matrix=affine_transform_matrix[:3, :3],
                 offset=affine_transform_matrix[:3, 3],
                 mode='constant',
@@ -96,4 +97,4 @@ for run_i, run_timestamps in enumerate(data_lines[3:], 4):
     print(f'Saving moving dummy data, run-{run_i}')
     nib.save(nib.Nifti1Image(epi_to_move, affine), save_path_move)
 
-print("Dummy data generation complete.")
+print("Dummy data generation complete!")
