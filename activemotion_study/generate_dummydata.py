@@ -76,6 +76,8 @@ for run_i, run_timestamps in enumerate(data_lines[3:], 4):
 
         for offset in range(window_volumes):
             vol_to_transform = tr_index + offset
+            if vol_to_transform < 0 or vol_to_transform >= n:  # Check bounds
+                continue
 
             # Generate rotation and translation matrices
             rotation = R.from_euler('xyz', rotation_angles[ts_i], degrees=True).as_matrix()
