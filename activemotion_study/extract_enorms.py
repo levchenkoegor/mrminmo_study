@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from scipy.stats import ttest_ind, shapiro, levene
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 # Function to load enorm data and timing data
 def load_enorm_and_timing(subj_id, cond_i, cond_name, movement_type, timing_file):
