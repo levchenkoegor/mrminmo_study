@@ -128,22 +128,28 @@ sampling_interval = 0.8
 pre_onset_duration = 3  # seconds before onset
 post_onset_duration = 8  # seconds after onset
 
-subjects = ['dummydata_nii']
-
 # Load sequences of conditions and runs from CSV
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
 sequence_df = pd.read_csv(sequence_file)
 
+subjects = sequence_df['Subj #']
 
 # main
 for subj_id in subjects:
     condition_sequence = sequence_df.loc[sequence_df['Subj #'] == subj_id, 'Conditions'].values[0].split(' ')
 
     for cond_i, cond_name in enumerate(condition_sequence):
+        # Define path
+        data_file = Path(deriv_fldr / f'sub-{subj_id}/sub-{subj_id}_task-mvts_cond-{cond_name}/sub-{subj_id}_task-mvts_cond-{cond_name}.results/dfile_rall.1D')
+
+        # Check if preproc outputs exist
+        if not data_file.exists():
+            print(f"Warning: Data file {data_file.stem} does not exist for sub-{subj_id}, condition-{cond_name}")
+            continue
+
         for movement_type in ['cough', 'crosslegsleftontop', 'crosslegsrightontop', 'raiselefthip', 'raiserighthip', 'lefthandtorightthigh',
                               'righthandtoleftthigh', 'sayHellotheremum', 'scratchleftcheek', 'scratchrightcheek']:
-
-            data_file = Path(deriv_fldr / f'sub-{subj_id}/sub-{subj_id}_task-mvts_cond-{cond_name}/sub-{subj_id}_task-mvts_cond-{cond_name}.results/dfile_rall.1D')
+            # Define path
             timing_file = Path(stim_fldr / f'condition-{movement_type}_run-all.1D')
 
             # Load the movement data and timing data
