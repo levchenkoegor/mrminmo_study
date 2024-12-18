@@ -2,12 +2,9 @@ import pingouin as pg
 import pandas as pd
 from pathlib import Path
 
-# Testing hypothesis 1.2: check if have any difference movement-wise
-# If so, then we will check if expected head movement associated with body movement types
-# The exact associations are listed in Table 1 in prereg protocol
+# Testing hypothesis 1.2: less head position change evoked by each type of body movement when
+# MinMo is used, compared to when standard cushions are used
 
-# Implement:
-# concat unilateral trials: (right)lefthandtorighthigh -> handtothigh
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
@@ -17,8 +14,29 @@ stim_fldr = Path(root_fldr / 'stimuli')
 # Read data
 df_enorms = pd.read_csv(deriv_fldr / 'df_enorm_avgs.csv')
 
-# Perform the repeated measures ANOVA
-anova_results = pg.rm_anova(dv='enorm_avg', within=['condition', 'movement'], subject='subject', data=df_enorms, detailed=True)
+# Generalize movement types
+movement_mapping = {
+    'lefthandtorightthigh': 'handtothigh',
+    'righthandtoleftthigh': 'handtothigh',
+    'scratchleftcheek': 'scratchcheek',
+    'scratchrightcheek': 'scratchcheek',
+    'crosslegsleftontop': 'crosslegs',
+    'crosslegsrightontop': 'crosslegs',
+    'raiselefthip': 'raisehip',
+    'raiserighthip': 'raisehip'
+}
 
-# Display the results
+# Create a new column for generalized movement types
+df_enorms['movement_general'] = df_enorms['movement'].replace(movement_mapping)
+
+# Perform the repeated measures ANOVA using the generalized movement column
+anova_results = pg.rm_anova(
+    dv='enorm_avg',
+    within=['condition', 'movement_general'],
+    subject='subject',
+    data=df_enorms,
+    detailed=True
+)
+
+print("\nRepeated Measures ANOVA Results:")
 print(anova_results)
