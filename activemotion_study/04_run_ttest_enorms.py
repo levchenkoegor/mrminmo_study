@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
 from pathlib import Path
 
+# Testing hypothesis 1.1:
+# Significantly less head position change in the MinMo condition relative to the NoMinMo condition
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
