@@ -12,3 +12,4 @@ dependencies:
   - pip:
     - nibabel==5.3.2
     - matplotlib==3.7.3
+    - pingouin==0.5.5
