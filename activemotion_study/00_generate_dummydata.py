@@ -40,8 +40,8 @@ file_paths = sorted(stim_path.glob('condition*.1D'))
 data_lines = []
 
 n_spare_trs, tr_duration = 10, 0.8
-spare_secs = int(n_spare_trs * tr_duration) # timing files don't take into account spare TRs
-# (makes sense for AFNI but not for dummy data generation)
+spare_secs = int(n_spare_trs * tr_duration) # timing files don't take into account spare TRs which
+# makes sense for AFNI but not for dummy data generation
 
 for line_idx in range(sum(1 for _ in open(file_paths[0]))):
     row = []
@@ -72,7 +72,8 @@ for run_i, run_timestamps in enumerate(data_lines[3:], 4):
 
     for ts_i, timestamp in enumerate(run_timestamps):
         # Convert timestamp (seconds) to TR index
-        tr_index = int(round(timestamp / tr_duration))  # Round to nearest TR index
+        # Round to nearest TR index+2 (+2 - to make sure transform isn't applied on before onset intervals)
+        tr_index = int(round(timestamp / tr_duration)) + 2
 
         for offset in range(window_volumes):
             vol_to_transform = tr_index + offset
