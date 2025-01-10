@@ -2,8 +2,9 @@
 
 # Bash version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu)
 
-# running on dummy data?
-export dummydata=1
+# running on dummy data (0-no, 1-yes)
+export dummydata=0
+max_jobs=8
 
 # Paths
 if [[ "$dummydata" -eq 1 ]]; then
@@ -29,7 +30,7 @@ export n_trs_remove=10
 # Initialize subject counter
 export subject_index=0
 
-echo "Make sure that the order of subjects aligned with sequence of runs in sequence_excel_states.txt file"
+echo "Make sure that the order of subjects aligned with the sequence of runs from sequence_runs.txt file"
 echo $(ls "$data_folder" | grep '_nii$')
 
 # Function to slice specific rows from a .1D file
@@ -50,12 +51,21 @@ slice_1D_file() {
     done
 }
 
+# Define the bad subjects
+bad_subjects=("241115CP_nii" "241119EX_nii" "241122ZY_nii")
 
 # Run AFNI
 for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
 
+  (
     # Extract subject ID from the directory name (240827EL_nii, for example)
     subject_id=$(basename "$subject_dir")
+
+    # Check if the subject ID is in the list of bad subjects
+    if [[ " ${bad_subjects[@]} " =~ " ${subject_id} " ]]; then
+        echo "Skipping bad subject: $subject_id"
+        continue
+    fi
     echo "Processing subject: $subject_id"
 
     # Get the conditions for the current subject
@@ -119,6 +129,23 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                 export phasereverse=6
                 export mprage=2
 
+                # Handle exceptions where the order files was different
+                if [[ "$subject_id" == "241104HL_nii" ]]; then
+                    export run1=10
+                    export run2=14
+                    export run3=18
+                    export movie=22
+                    export phasereverse=12
+                    export mprage=2
+                elif [[ "$subject_id" == "241111LS_nii" ]]; then
+                    export run1=5
+                    export run2=9
+                    export run3=13
+                    export movie=17
+                    export phasereverse=7
+                    export mprage=3
+                fi
+
                 # First condition: Extract the first 3 rows
                 slice_1D_file "$stim_folder/condition-cough_run-all.1D" "$cough_temp_file" current_excel_states_sequence[@] 0
                 slice_1D_file "$stim_folder/condition-crosslegsleftontop_run-all.1D" "$crosslegsleftontop_temp_file" current_excel_states_sequence[@] 0
@@ -137,6 +164,27 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                 export movie=34
                 export phasereverse=24
                 export mprage=20
+
+                # Handle exceptions where the order files was different
+                if [[ "$subject_id" == "241104HL_nii" ]]; then
+                    export run1=28
+                    export run2=32
+                    export run3=36
+                    export movie=40
+                    export phasereverse=30
+                    export mprage=26
+                elif [[ "$subject_id" == "241106JY_nii" ]]; then
+                    export run2=28
+                    export run3=34
+                    export movie=38
+                elif [[ "$subject_id" == "241111LS_nii" ]]; then
+                    export run1=23
+                    export run2=27
+                    export run3=31
+                    export movie=35
+                    export phasereverse=25
+                    export mprage=21
+                fi
 
                 # Second condition: Extract the next 3 rows (starting at index 3)
                 slice_1D_file "$stim_folder/condition-cough_run-all.1D" "$cough_temp_file" current_excel_states_sequence[@] 3
@@ -234,78 +282,9 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                   -volreg_opts_vr -twopass -twodup -maxdisp1D mm \
                   -volreg_compute_tsnr yes \
                   -remove_preproc_files \
-                  -blur_size 4 \
-                  -regress_motion_per_run \
-                  -regress_run_clustsim no \
-                  -regress_show_df_info yes \
-                  -regress_reml_exec \
-                  -regress_opts_3dD -num_stimts 10 -local_times \
-                      -stim_label 1 cough \
-                      -stim_label 2 crosslegsleftontop \
-                      -stim_label 3 crosslegsrightontop \
-                      -stim_label 4 raiselefthip \
-                      -stim_label 5 raiserighthip \
-                      -stim_label 6 righthandtoleftthigh \
-                      -stim_label 7 lefthandtorightthigh \
-                      -stim_label 8 sayHellotheremum \
-                      -stim_label 9 scratchleftcheek \
-                      -stim_label 10 scratchrightcheek \
-                      -stim_times 1 "$cough_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 2 "$crosslegsleftontop_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 3 "$crosslegsrightontop_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 4 "$raiselefthip_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 5 "$raiserighthip_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 6 "$righthandtoleftthigh_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 7 "$lefthandtorightthigh_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 8 "$sayHellotheremum_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 9 "$scratchleftcheek_temp_file" 'TENT(0, 3.2, 5)' \
-                      -stim_times 10 "$scratchrightcheek_temp_file" 'TENT(0, 3.2, 5)' \
-                      -gltsym 'SYM: cough crosslegsleftontop crosslegsrightontop raiselefthip raiserighthip righthandtoleftthigh lefthandtorightthigh sayHellotheremum scratchleftcheek scratchrightcheek' \
-                      -glt_label 1 'mvts_avg' \
                   -html_review_style pythonic
 
               tcsh -xef "$script_path" 2>&1 | tee "$output_path"
-
-              # 3dDeconvolve with TENT again but diff func parameters (copied from afni proc py output)
-              tcsh 3dDeconvolve -input "$results_path"/pb04."$subject_id".r*.scale+orig.HEAD \
-                  -ortvec mot_demean.r01.1D mot_demean_r01 \
-                  -ortvec mot_demean.r02.1D mot_demean_r02 \
-                  -ortvec mot_demean.r03.1D mot_demean_r03 \
-                  -polort 3 -float \
-                  -num_stimts 0 \
-                  -num_stimts 10 \
-                  -local_times \
-                  -stim_label 1 cough \
-                  -stim_label 2 crosslegsleftontop \
-                  -stim_label 3 crosslegsrightontop \
-                  -stim_label 4 raiselefthip \
-                  -stim_label 5 raiserighthip \
-                  -stim_label 6 righthandtoleftthigh \
-                  -stim_label 7 lefthandtorightthigh \
-                  -stim_label 8 sayHellotheremum \
-                  -stim_label 9 scratchleftcheek \
-                  -stim_label 10 scratchrightcheek \
-                  -stim_times 1 "$cough_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 2 "$crosslegsleftontop_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 3 "$crosslegsrightontop_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 4 "$raiselefthip_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 5 "$raiserighthip_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 6 "$righthandtoleftthigh_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 7 "$lefthandtorightthigh_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 8 "$sayHellotheremum_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 9 "$scratchleftcheek_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -stim_times 10 "$scratchrightcheek_temp_file" 'TENT(4.8, 8.8, 6)' \
-                  -gltsym 'SYM: cough crosslegsleftontop crosslegsrightontop raiselefthip raiserighthip righthandtoleftthigh lefthandtorightthigh sayHellotheremum scratchleftcheek scratchrightcheek' \
-                  -glt_label 1 'mvts_avg' \
-                  -fout -tout -x1D "$results_path"/X_tent48-88.xmat.1D -xjpeg "$results_path"/X_48-88.jpg \
-                  -fitts "$results_path"/fitts_48-88."$subject_id" \
-                  -errts "$results_path"/errts_48-88."$subject_id" \
-                  -bucket "$results_path"/stats_48-88."$subject_id"
-
-              # -- use 3dTproject to project out regression matrix --
-              #    (make errts like 3dDeconvolve, but more quickly)
-              tcsh 3dTproject -polort 0 -input "$results_path"/pb04."$subject_id".r*.scale+orig.HEAD \
-                         -ort X_48-88.xmat.1D -prefix "$results_path"/errts_48-88."$subject_id".tproject
 
             # afni proc py for movie-watching task
             elif [ "$task" = "movies" ]; then
@@ -332,6 +311,13 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
         cond_i=$((cond_i + 1))
     done
     subject_index=$((subject_index + 1))
+  ) &
+
+  # Limit the number of parallel jobs
+  while [ "$(jobs -r | wc -l)" -ge "$max_jobs" ]; do
+      sleep 1
+  done
+
 done
 
 # Some links:
