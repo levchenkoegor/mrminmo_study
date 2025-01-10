@@ -4,7 +4,7 @@
 
 # running on dummy data (0-no, 1-yes)
 export dummydata=0
-max_jobs=8
+max_jobs=8 # Set maximum number of parallel jobs
 
 # Paths
 if [[ "$dummydata" -eq 1 ]]; then
@@ -57,7 +57,6 @@ bad_subjects=("241115CP_nii" "241119EX_nii" "241122ZY_nii")
 # Run AFNI
 for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
 
-  (
     # Extract subject ID from the directory name (240827EL_nii, for example)
     subject_id=$(basename "$subject_dir")
 
@@ -283,8 +282,14 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                   -volreg_compute_tsnr yes \
                   -remove_preproc_files \
                   -html_review_style pythonic
+              (
+                tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+              ) & # Run in the background
 
-              tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+              # Limit the number of parallel jobs
+              while [ "$(jobs -r | wc -l)" -ge "$max_jobs" ]; do
+                  sleep 1
+              done
 
             # afni proc py for movie-watching task
             elif [ "$task" = "movies" ]; then
@@ -303,20 +308,20 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                   -volreg_opts_vr -twopass -twodup -maxdisp1D mm \
                   -volreg_compute_tsnr yes \
                   -html_review_style pythonic
+              (
+                tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+              ) & # Run in the background
 
-              tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+              # Limit the number of parallel jobs
+              while [ "$(jobs -r | wc -l)" -ge "$max_jobs" ]; do
+                  sleep 1
+              done
             fi
 
         done
         cond_i=$((cond_i + 1))
     done
     subject_index=$((subject_index + 1))
-  ) &
-
-  # Limit the number of parallel jobs
-  while [ "$(jobs -r | wc -l)" -ge "$max_jobs" ]; do
-      sleep 1
-  done
 
 done
 
