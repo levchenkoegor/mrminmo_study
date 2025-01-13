@@ -23,7 +23,7 @@ else
   # Read the sequence_conditions.txt into an array
   mapfile -t conditions_sequences < sequence_conditions.txt
   # Read the sequence_subjects.txt into an array
-  mapfile -t subjects_sequence < sequences_subjects.txt
+  mapfile -t subjects_sequence < sequence_subjects.txt
 fi
 
 export stim_folder=/data/elevchenko/MinMo_movements/activemotion_study/stimuli_tent
@@ -65,6 +65,7 @@ for subject_dir in "${subjects_sequence[@]}"; do
     # Check if the subject ID is in the list of bad subjects
     if [[ " ${bad_subjects[@]} " =~ " ${subject_id} " ]]; then
         echo "Skipping bad subject: $subject_id"
+        subject_index=$((subject_index + 1))
         continue
     fi
     echo "Processing subject: $subject_id"
