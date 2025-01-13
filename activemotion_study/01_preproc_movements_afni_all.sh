@@ -3,7 +3,7 @@
 # Bash version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu)
 
 # running on dummy data (0-no, 1-yes)
-export dummydata=0
+export dummydata=1
 max_jobs=8 # Set maximum number of parallel jobs
 
 # Paths
@@ -15,6 +15,8 @@ if [[ "$dummydata" -eq 1 ]]; then
   mapfile -t excel_states_sequences < sequence_runs_dummy.txt
   # Read the sequence_conditions_dummy into an array
   mapfile -t conditions_sequences < sequence_conditions_dummy.txt
+  # Define the array with subjects with just one dummy subject
+  subjects_sequence=('dummydata_nii')
 else
   export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/raw_data
 
