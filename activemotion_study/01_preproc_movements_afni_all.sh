@@ -22,6 +22,8 @@ else
   mapfile -t excel_states_sequences < sequence_runs.txt
   # Read the sequence_conditions.txt into an array
   mapfile -t conditions_sequences < sequence_conditions.txt
+  # Read the sequence_subjects.txt into an array
+  mapfile -t subjects_sequence < sequences_subjects.txt
 fi
 
 export stim_folder=/data/elevchenko/MinMo_movements/activemotion_study/stimuli_tent
@@ -31,7 +33,7 @@ export n_trs_remove=10
 export subject_index=0
 
 echo "Make sure that the order of subjects aligned with the sequence of runs from sequence_runs.txt file"
-echo $(ls "$data_folder" | grep '_nii$')
+echo "${subjects_sequence[@]}"
 
 # Function to slice specific rows from a .1D file
 # This function limits to 3 rows per condition
@@ -55,7 +57,7 @@ slice_1D_file() {
 bad_subjects=("241115CP_nii" "241119EX_nii" "241122ZY_nii")
 
 # Run AFNI
-for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
+for subject_dir in "${subjects_sequence[@]}"; do
 
     # Extract subject ID from the directory name (240827EL_nii, for example)
     subject_id=$(basename "$subject_dir")
@@ -129,7 +131,14 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                 export mprage=2
 
                 # Handle exceptions where the order files was different
-                if [[ "$subject_id" == "241104HL_nii" ]]; then
+                if [[ "$subject_id" == "241104ET_nii" ]]; then
+                    export run1=5
+                    export run2=9
+                    export run3=13
+                    export movie=17
+                    export phasereverse=7
+                    export mprage=3
+                elif [[ "$subject_id" == "241104HL_nii" ]]; then
                     export run1=10
                     export run2=14
                     export run3=18
@@ -165,7 +174,14 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                 export mprage=20
 
                 # Handle exceptions where the order files was different
-                if [[ "$subject_id" == "241104HL_nii" ]]; then
+                if [[ "$subject_id" == "241104ET_nii" ]]; then
+                    export run1=23
+                    export run2=27
+                    export run3=31
+                    export movie=35
+                    export phasereverse=25
+                    export mprage=21
+                elif [[ "$subject_id" == "241104HL_nii" ]]; then
                     export run1=28
                     export run2=32
                     export run3=36
@@ -176,6 +192,10 @@ for subject_dir in $(ls "$data_folder" | grep '_nii$'); do
                     export run2=28
                     export run3=34
                     export movie=38
+                elif [[ "$subject_id" == "241108RH_nii" ]]; then
+                    export run3=32
+                    export movie=36
+                    export mprage=20
                 elif [[ "$subject_id" == "241111LS_nii" ]]; then
                     export run1=23
                     export run2=27
