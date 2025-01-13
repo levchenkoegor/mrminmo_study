@@ -3,7 +3,7 @@
 # Bash version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu)
 
 # running on dummy data (0-no, 1-yes)
-export dummydata=1
+export dummydata=0
 max_jobs=8 # Set maximum number of parallel jobs
 
 # Paths
