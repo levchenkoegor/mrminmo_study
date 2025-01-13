@@ -58,14 +58,19 @@ root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives')
 stim_fldr = Path(root_fldr / 'stimuli')
 
-run_lengths = [505, 505, 505]  # Example run lengths
+run_lengths = [505, 505, 505]  # Run lengths
 
 # Load subject and condition sequences
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
 sequence_df = pd.read_csv(sequence_file)
 
+dummydata = 0
+
 # Exclude dummy data
-subjects = sequence_df[sequence_df['Subj #'] != 'dummydata_nii']['Subj #']
+if dummydata == 1:
+    subjects = sequence_df[sequence_df['Subj #'] == 'dummydata_nii']['Subj #']
+else:
+    subjects = sequence_df[sequence_df['Subj #'] != 'dummydata_nii']['Subj #']
 
 # Results list
 results = []
@@ -133,6 +138,9 @@ for subj_id in subjects:
 
 # Save to CSV
 df = pd.DataFrame(results)
-df.to_csv(deriv_fldr / "df_motion_metrics_all.csv", index=False)
+if dummydata == 1:
+    df.to_csv(deriv_fldr / "df_motion_metrics_all_dummydata.csv", index=False)
+else:
+    df.to_csv(deriv_fldr / "df_motion_metrics_all.csv", index=False)
 
 print("Metrics saved to df_motion_metrics_all.csv")
