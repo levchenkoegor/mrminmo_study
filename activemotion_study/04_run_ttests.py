@@ -33,8 +33,8 @@ for metric in metrics_to_analyze:
 
     # Plot histograms
     plt.figure(figsize=(10, 6))
-    plt.hist(nominmo_series, bins=30, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
-    plt.hist(minmo_series, bins=30, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
+    plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
+    plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
     plt.title(f'Distribution of Averages for {metric}: NoMinMo vs MinMo')
     if metric in ['dS', 'dL', 'dP', 'enorm']:
         plt.xlabel('Millimetres')
