@@ -81,11 +81,13 @@ def plot_each_trial_and_save(erp_data, time_window_corrected, headers, movement_
         axs[i].legend(loc='upper right')
         axs[i].grid(True)
 
-    plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-{cond_name}, {subj_id}')
+    #plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-{cond_name}, {subj_id}')
+    plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-*****, {subj_id}')
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout to fit the title
 
     # Save the plot
-    roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_roll_pitch_yaw.png'
+    #roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_roll_pitch_yaw.png'
+    roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-*****_roll_pitch_yaw.png'
     plt.savefig(os.path.join(save_dir, roll_pitch_yaw_filename))
     print(f"File saved: {roll_pitch_yaw_filename}")  # Print message when file is saved
     plt.close(fig)
@@ -107,11 +109,13 @@ def plot_each_trial_and_save(erp_data, time_window_corrected, headers, movement_
         axs[i].legend(loc='upper right')
         axs[i].grid(True)
 
-    plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-{cond_name}, {subj_id}')
+    #plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-{cond_name}, {subj_id}')
+    plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-****, {subj_id}')
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout to fit the title
 
     # Save the plot
-    dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_dS_dL_dP.png'
+    #dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_dS_dL_dP.png'
+    dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-*****_dS_dL_dP.png'
     plt.savefig(os.path.join(save_dir, dS_dL_dP_filename))
     print(f"File saved: {dS_dL_dP_filename}")  # Print message when file is saved
     plt.close(fig)
