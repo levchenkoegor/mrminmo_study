@@ -348,5 +348,6 @@ for subject_dir in "${subjects_sequence[@]}"; do
 
 done
 
-# Some links:
+# Some useful links:
+# https://neurostars.org/t/missing-mm-and-mm-delt-files-for-all-runs-in-afni-output/31415
 # https://discuss.afni.nimh.nih.gov/t/tent-models-and-3dremlfit/2594
