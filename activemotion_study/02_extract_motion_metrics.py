@@ -14,7 +14,9 @@ def load_motion_and_timing(motion_file, timing_file):
 
     # Load motion data, skipping header lines
     with open(motion_file, 'r') as file:
-        motion_data = np.array([float(line.strip()) for line in file if not line.startswith('#')])
+        motion_data = np.array([
+            list(map(float, line.strip().split())) for line in file if not line.startswith('#')
+        ])
 
     # Load timing data
     if not timing_file.exists():
@@ -24,7 +26,6 @@ def load_motion_and_timing(motion_file, timing_file):
         timing_content = file.readlines()
 
     return motion_data, timing_content
-
 
 # Function to adjust timing for global run lengths
 def adjust_timing_for_global(onset_times, run_lengths, sampling_interval=0.8):
@@ -36,26 +37,24 @@ def adjust_timing_for_global(onset_times, run_lengths, sampling_interval=0.8):
         cumulative_time += run_lengths[run_idx] * sampling_interval
     return adjusted_timings
 
-
 # Function to extract trials and averages for a metric
-def get_post_onset_metrics(motion_data, onset_times, sampling_interval=0.8, post_onset_duration=5):
+def get_post_onset_metrics(motion_data, onset_times, col_idx, sampling_interval=0.8, post_onset_duration=5):
     trials, averages = [], []
     post_onset_duration_idx = int(post_onset_duration / sampling_interval)
 
     for onset in onset_times:
         onset_idx = int(onset / sampling_interval)
         end_idx = onset_idx + post_onset_duration_idx
-        trial = motion_data[onset_idx:end_idx]
+        trial = motion_data[onset_idx:end_idx, col_idx]
         avg = np.mean(trial)
         trials.append(trial)
         averages.append(avg)
 
     return trials, averages
 
-
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
-deriv_fldr = Path(root_fldr / 'derivatives')
+deriv_fldr = Path(root_fldr / 'derivatives2')
 stim_fldr = Path(root_fldr / 'stimuli')
 
 run_lengths = [505, 505, 505]  # Run lengths
@@ -88,6 +87,7 @@ for subj_id in subjects:
             "mm": cond_folder / "mm",
             "mm_delt": cond_folder / "mm_delt",
             "outliers": cond_folder / "outcount_rall.1D",
+            "dfile": cond_folder / "dfile_rall.1D",
         }
 
         for movement_type in ['cough', 'crosslegsleftontop', 'crosslegsrightontop', 'raiselefthip', 'raiserighthip', 'lefthandtorightthigh',
@@ -119,28 +119,45 @@ for subj_id in subjects:
             for metric_name, motion_file in metric_files.items():
 
                 motion_data, _ = load_motion_and_timing(motion_file, timing_file)
-                # skip mm and mm_delt for now since it has only 505 data points (just one run)
+                # Skip mm and mm_delt for now since it has only 505 data points (just one run)
                 if motion_data is None or metric_name in ['mm', 'mm_delt']:
                     continue
 
-                trials, averages = get_post_onset_metrics(motion_data, onset_times)
-
-                # Append results
-                for trial, avg in zip(trials, averages):
-                    results.append({
-                        "subject": subj_id,
-                        "condition": cond_name,
-                        "movement": movement_type,
-                        "metric": metric_name,
-                        "trial": trial.tolist(),
-                        "avg": avg,
-                    })
+                if metric_name == "dfile":
+                    # Extract six motion parameters
+                    motion_params = ["roll", "pitch", "yaw", "dS", "dL", "dP"]
+                    for col_idx, param in enumerate(motion_params):
+                        trials, averages = get_post_onset_metrics(motion_data, onset_times, col_idx)
+                        for trial, avg in zip(trials, averages):
+                            results.append({
+                                "subject": subj_id,
+                                "condition": cond_name,
+                                "movement": movement_type,
+                                "metric": param,
+                                "trial": trial.tolist(),
+                                "avg": avg,
+                            })
+                else:
+                    trials, averages = get_post_onset_metrics(motion_data, onset_times, col_idx=0)
+                    for trial, avg in zip(trials, averages):
+                        results.append({
+                            "subject": subj_id,
+                            "condition": cond_name,
+                            "movement": movement_type,
+                            "metric": metric_name,
+                            "trial": trial.tolist(),
+                            "avg": avg,
+                        })
 
 # Save to CSV
 df = pd.DataFrame(results)
+
+# Ensure the output directory exists
+(deriv_fldr / 'group_analysis').mkdir(parents=True, exist_ok=True)
+
 if dummydata == 1:
-    df.to_csv(deriv_fldr / "df_motion_metrics_all_dummydata.csv", index=False)
+    df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_all_dummydata.csv", index=False)
 else:
-    df.to_csv(deriv_fldr / "df_motion_metrics_all.csv", index=False)
+    df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_all.csv", index=False)
 
 print("Metrics saved to df_motion_metrics_all.csv")
