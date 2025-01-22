@@ -291,20 +291,21 @@ for subject_dir in "${subjects_sequence[@]}"; do
                   -subj_id "$subject_id" \
                   -script "$script_path" \
                   -out_dir "$results_path" \
-                  -dsets "$data_folder"/"$subject_id"/*movt*_"$run1".nii \
-                         "$data_folder"/"$subject_id"/*movt*_"$run2".nii \
-                         "$data_folder"/"$subject_id"/*movt*_"$run3".nii \
-                  -blip_reverse_dset "$data_folder"/"$subject_id"/*PErev*_"$phasereverse".nii \
-                  -blocks tcat align tlrc volreg blur scale regress \
-                  -radial_correlate_blocks volreg regress \
+                  -dsets "$data_folder"/"$subject_id"/*movt*_"$run1".nii.gz \
+                         "$data_folder"/"$subject_id"/*movt*_"$run2".nii.gz \
+                         "$data_folder"/"$subject_id"/*movt*_"$run3".nii.gz \
+                  -blip_reverse_dset "$data_folder"/"$subject_id"/*PErev*_"$phasereverse".nii.gz \
+                  -blocks tcat align tlrc volreg scale \
+                  -radial_correlate_blocks volreg \
                   -tlrc_base MNI152_2009_template.nii.gz \
                   -tcat_remove_first_trs "$n_trs_remove" \
-                  -copy_anat "$data_folder"/"$subject_id"/*MPRAGE*_"$mprage".nii \
+                  -copy_anat "$data_folder"/"$subject_id"/*MPRAGE*_"$mprage".nii.gz \
                   -volreg_align_to first \
-                  -volreg_opts_vr -twopass -twodup -maxdisp1D mm \
+                  -volreg_opts_vr -twopass -twodup -maxdisp1D mm'.r$run' \
                   -volreg_compute_tsnr yes \
                   -remove_preproc_files \
                   -html_review_style pythonic
+
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
               ) & # Run in the background
@@ -318,19 +319,20 @@ for subject_dir in "${subjects_sequence[@]}"; do
             elif [ "$task" = "movies" ]; then
               afni_proc.py \
                   -subj_id "$subject_id" \
-                  -script "$script_path"  \
+                  -script "$script_path" \
                   -out_dir "$results_path" \
-                  -dsets "$data_folder"/"$subject_id"/*film*_"$movie".nii \
-                  -blip_reverse_dset "$data_folder"/"$subject_id"/*PErev*_"$phasereverse".nii \
-                  -blocks tcat align tlrc volreg blur scale regress \
-                  -radial_correlate_blocks volreg regress \
+                  -dsets "$data_folder"/"$subject_id"/*film*_"$movie".nii.gz \
+                  -blip_reverse_dset "$data_folder"/"$subject_id"/*PErev*_"$phasereverse".nii.gz \
+                  -blocks tcat align tlrc volreg scale \
+                  -radial_correlate_blocks volreg \
                   -tlrc_base MNI152_2009_template.nii.gz \
                   -tcat_remove_first_trs "$n_trs_remove" \
-                  -copy_anat "$data_folder"/"$subject_id"/*MPRAGE*_"$mprage".nii \
+                  -copy_anat "$data_folder"/"$subject_id"/*MPRAGE*_"$mprage".nii.gz \
                   -volreg_align_to first \
-                  -volreg_opts_vr -twopass -twodup -maxdisp1D mm \
+                  -volreg_opts_vr -twopass -twodup -maxdisp1D mm'.r$run' \
                   -volreg_compute_tsnr yes \
                   -html_review_style pythonic
+
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
               ) & # Run in the background
@@ -347,6 +349,9 @@ for subject_dir in "${subjects_sequence[@]}"; do
     subject_index=$((subject_index + 1))
 
 done
+
+# Zip derivatives
+find ${data_folder}/../derivatives -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 
 # Some useful links:
 # https://neurostars.org/t/missing-mm-and-mm-delt-files-for-all-runs-in-afni-output/31415
