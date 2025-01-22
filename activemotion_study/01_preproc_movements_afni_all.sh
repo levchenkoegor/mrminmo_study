@@ -308,6 +308,10 @@ for subject_dir in "${subjects_sequence[@]}"; do
 
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+
+                # make a single file of mm files
+                cat "${results_path}"/mm.r* > mm_rall
+                cat "${results_path}"/mm.r*_delt > mm_delt_rall
               ) & # Run in the background
 
               # Limit the number of parallel jobs
@@ -335,6 +339,10 @@ for subject_dir in "${subjects_sequence[@]}"; do
 
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
+
+                # make a single file of mm files
+                cat "${results_path}"/mm.r* > mm_rall
+                cat "${results_path}"/mm.r*_delt > mm_delt_rall
               ) & # Run in the background
 
               # Limit the number of parallel jobs
