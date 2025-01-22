@@ -1,19 +1,23 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
 from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
+from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
-deriv_fldr = Path(root_fldr / 'derivatives')
+deriv_fldr = Path(root_fldr / 'derivatives2' / 'group_analysis')
 stim_fldr = Path(root_fldr / 'stimuli')
 
 # Read data
 df_mot_metrics = pd.read_csv(deriv_fldr / 'df_motion_metrics_all.csv')
 
 # Metrics to analyze
-metrics_to_analyze = ['enorm', 'outliers']  # Add 'mm', 'mm_delt' when ready
+metrics_to_analyze = ['enorm', 'outliers', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
+
+# Initialize a results list for descriptive statistics and p-values
+descriptive_results = []
+p_values = []
 
 # Loop through each metric
 for metric in metrics_to_analyze:
@@ -31,52 +35,86 @@ for metric in metrics_to_analyze:
     plt.figure(figsize=(10, 6))
     plt.hist(nominmo_series, bins=30, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
     plt.hist(minmo_series, bins=30, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
-    plt.title(f'Distribution of Averages for {metric.capitalize()}: NoMinMo vs MinMo')
-    plt.xlabel('Framewise displacement (mm)')
+    plt.title(f'Distribution of Averages for {metric}: NoMinMo vs MinMo')
+    if metric in ['dS', 'dL', 'dP', 'enorm']:
+        plt.xlabel('Millimetres')
+    elif metric in ['roll', 'pitch', 'yaw']:
+        plt.xlabel('Degrees')
+    elif metric in ['outliers']:
+        plt.xlabel('Percentages')
+
     plt.ylabel('Count')
     plt.legend()
     plt.grid(True)
 
-    # Make sure save folder exists
-    os.makedirs(deriv_fldr / 'plots', exist_ok=True)
-
     # Save the plot
-    output_path = f'distribution_{metric}_nominmo_vs_minmo.png'
-    plt.savefig(Path(deriv_fldr / 'plots' / output_path), dpi=300, bbox_inches='tight')
+    plot_output_path = deriv_fldr / f'plots/distribution_{metric}_nominmo_vs_minmo.png'
+    plot_output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"Plot saved to {output_path}")
+    print(f"Plot saved to {plot_output_path}")
 
     # Descriptive statistics
-    print(f"NoMinMo {metric.capitalize()} Series Statistics:")
-    print(nominmo_series.describe())
+    nominmo_stats = nominmo_series.describe()
+    minmo_stats = minmo_series.describe()
 
-    print(f"\nMinMo {metric.capitalize()} Series Statistics:")
-    print(minmo_series.describe())
+    # Calculate additional descriptive statistics
+    nominmo_additional_stats = {
+        "median": nominmo_series.median(),
+        "min": nominmo_series.min(),
+        "max": nominmo_series.max()
+    }
+    minmo_additional_stats = {
+        "median": minmo_series.median(),
+        "min": minmo_series.min(),
+        "max": minmo_series.max()
+    }
 
     # Check normality with the Shapiro-Wilk test
     shapiro_nominmo = shapiro(nominmo_series)
     shapiro_minmo = shapiro(minmo_series)
 
-    print(f"\nShapiro-Wilk test for NoMinMo {metric} normality p-value: {shapiro_nominmo.pvalue}")
-    print(f"Shapiro-Wilk test for MinMo {metric} normality p-value: {shapiro_minmo.pvalue}")
-
     # Check equality of variances with Levene's test
     levene_test = levene(nominmo_series, minmo_series)
-    print(f"\nLevene's test for equal variances of {metric} p-value: {levene_test.pvalue}")
 
     # Perform hypothesis test based on assumptions
     if shapiro_nominmo.pvalue > 0.05 and shapiro_minmo.pvalue > 0.05 and levene_test.pvalue > 0.05:
         t_test = ttest_ind(nominmo_series, minmo_series)
-        print(f"\nT-test for {metric} p-value: {t_test.pvalue}")
-        if t_test.pvalue < 0.05:
-            print(f"There is a significant difference between NoMinMo and MinMo for {metric} (p < 0.05).")
-        else:
-            print(f"There is no significant difference between NoMinMo and MinMo for {metric} (p >= 0.05).")
+        test_name = "T-test"
+        test_pvalue = t_test.pvalue
     else:
         u_test = mannwhitneyu(nominmo_series, minmo_series)
-        print(f"\nMann-Whitney U test for {metric} p-value: {u_test.pvalue}")
-        if u_test.pvalue < 0.05:
-            print(f"There is a significant difference between NoMinMo and MinMo distributions for {metric} (p < 0.05).")
-        else:
-            print(
-                f"There is no significant difference between NoMinMo and MinMo distributions for {metric} (p >= 0.05).")
+        test_name = "Mann-Whitney U"
+        test_pvalue = u_test.pvalue
+
+    # Append p-value for FDR correction
+    p_values.append(test_pvalue)
+
+    # Append descriptive statistics and test results
+    descriptive_results.append({
+        "metric": metric,
+        "NoMinMo_mean": nominmo_stats["mean"],
+        "NoMinMo_std": nominmo_stats["std"],
+        "NoMinMo_median": nominmo_additional_stats["median"],
+        "MinMo_mean": minmo_stats["mean"],
+        "MinMo_std": minmo_stats["std"],
+        "MinMo_median": minmo_additional_stats["median"],
+        "normality_NoMinMo_p": shapiro_nominmo.pvalue,
+        "normality_MinMo_p": shapiro_minmo.pvalue,
+        "levene_p": levene_test.pvalue,
+        "test": test_name,
+        "test_pvalue": test_pvalue,
+        "significant": False  # Placeholder, will be updated after FDR correction
+    })
+
+# Apply FDR correction
+_, corrected_p_values = fdrcorrection(p_values, alpha=0.05)
+for i, corrected_p in enumerate(corrected_p_values):
+    descriptive_results[i]["corrected_pvalue"] = corrected_p
+    descriptive_results[i]["significant"] = corrected_p < 0.05
+
+# Convert results to a DataFrame and save as CSV
+df_results = pd.DataFrame(descriptive_results).round(4)
+df_results.to_csv(deriv_fldr / "descriptive_statistics_results_with_fdr.csv", index=False)
+
+print("Descriptive statistics and FDR-corrected test results saved to descriptive_statistics_results_with_fdr.csv")
