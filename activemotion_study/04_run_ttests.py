@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
 from pathlib import Path
 
@@ -31,10 +32,13 @@ for metric in metrics_to_analyze:
     plt.hist(nominmo_series, bins=30, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
     plt.hist(minmo_series, bins=30, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
     plt.title(f'Distribution of Averages for {metric.capitalize()}: NoMinMo vs MinMo')
-    plt.xlabel('Average of 5 seconds post-onset')
+    plt.xlabel('Framewise displacement (mm)')
     plt.ylabel('Count')
     plt.legend()
     plt.grid(True)
+
+    # Make sure save folder exists
+    os.makedirs(deriv_fldr / 'plots', exist_ok=True)
 
     # Save the plot
     output_path = f'distribution_{metric}_nominmo_vs_minmo.png'
