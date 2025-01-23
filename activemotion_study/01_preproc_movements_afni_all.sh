@@ -309,9 +309,15 @@ for subject_dir in "${subjects_sequence[@]}"; do
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
 
-                # make a single file of mm files
-                cat "${results_path}"/mm.r* > mm_rall
-                cat "${results_path}"/mm.r*_delt > mm_delt_rall
+                # Concatenate mm files, ignoring the first two lines
+                for file in "${results_path}"/mm.r[0-9][0-9]; do
+                    tail -n +3 "$file" >> "${results_path}/mm_rall"
+                done
+
+                # Concatenate mm_delt files, ignoring the first two lines
+                for file in "${results_path}"/mm.r[0-9][0-9]_delt; do
+                    tail -n +3 "$file" >> "${results_path}/mm_delt_rall"
+                done
               ) & # Run in the background
 
               # Limit the number of parallel jobs
@@ -340,9 +346,15 @@ for subject_dir in "${subjects_sequence[@]}"; do
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
 
-                # make a single file of mm files
-                cat "${results_path}"/mm.r* > mm_rall
-                cat "${results_path}"/mm.r*_delt > mm_delt_rall
+                # Concatenate mm files, ignoring the first two lines
+                for file in "${results_path}"/mm.r[0-9][0-9]; do
+                    tail -n +3 "$file" >> "${results_path}/mm_rall"
+                done
+
+                # Concatenate mm_delt files, ignoring the first two lines
+                for file in "${results_path}"/mm.r[0-9][0-9]_delt; do
+                    tail -n +3 "$file" >> "${results_path}/mm_delt_rall"
+                done
               ) & # Run in the background
 
               # Limit the number of parallel jobs
