@@ -54,7 +54,7 @@ def get_post_onset_metrics(motion_data, onset_times, col_idx, sampling_interval=
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
-deriv_fldr = Path(root_fldr / 'derivatives2')
+deriv_fldr = Path(root_fldr / 'derivatives')
 stim_fldr = Path(root_fldr / 'stimuli')
 
 run_lengths = [505, 505, 505]  # Run lengths
@@ -84,8 +84,8 @@ for subj_id in subjects:
         # Define metric files
         metric_files = {
             "enorm": cond_folder / f"motion_{subj_id}_enorm.1D",
-            "mm": cond_folder / "mm",
-            "mm_delt": cond_folder / "mm_delt",
+            "mm": cond_folder / "mm_rall",
+            "mm_delt": cond_folder / "mm_delt_rall",
             "outliers": cond_folder / "outcount_rall.1D",
             "dfile": cond_folder / "dfile_rall.1D",
         }
@@ -119,9 +119,6 @@ for subj_id in subjects:
             for metric_name, motion_file in metric_files.items():
 
                 motion_data, _ = load_motion_and_timing(motion_file, timing_file)
-                # Skip mm and mm_delt for now since it has only 505 data points (just one run)
-                if motion_data is None or metric_name in ['mm', 'mm_delt']:
-                    continue
 
                 if metric_name == "dfile":
                     # Extract six motion parameters
