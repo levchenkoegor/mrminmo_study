@@ -6,14 +6,14 @@ from pathlib import Path
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
-deriv_fldr = Path(root_fldr / 'derivatives2' / 'group_analysis')
+deriv_fldr = Path(root_fldr / 'derivatives' / 'group_analysis')
 stim_fldr = Path(root_fldr / 'stimuli')
 
 # Read data
 df_mot_metrics = pd.read_csv(deriv_fldr / 'df_motion_metrics_all.csv')
 
 # Metrics to analyze
-metrics_to_analyze = ['enorm', 'outliers', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
+metrics_to_analyze = ['mm', 'mm_delt', 'enorm', 'outliers', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
 
 # Initialize a results list for descriptive statistics and p-values
 descriptive_results = []
@@ -36,7 +36,7 @@ for metric in metrics_to_analyze:
     plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
     plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
     plt.title(f'Distribution of Averages for {metric}: NoMinMo vs MinMo')
-    if metric in ['dS', 'dL', 'dP', 'enorm']:
+    if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
         plt.xlabel('Millimetres')
     elif metric in ['roll', 'pitch', 'yaw']:
         plt.xlabel('Degrees')
