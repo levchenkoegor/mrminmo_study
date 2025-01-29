@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
 from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
@@ -27,32 +28,57 @@ for metric in metrics_to_analyze:
     nominmo_data = df_mot_metrics[(df_mot_metrics['condition'] == 'NoMinMo') & (df_mot_metrics['metric'] == metric)]
     minmo_data = df_mot_metrics[(df_mot_metrics['condition'] == 'MinMo') & (df_mot_metrics['metric'] == metric)]
 
-    # Extract averages
-    nominmo_series = nominmo_data['avg']
-    minmo_series = minmo_data['avg']
+    for statistic in ['max', 'min', 'avg']:
+        # Extract statistic
+        nominmo_series = nominmo_data[statistic]
+        minmo_series = minmo_data[statistic]
 
-    # Plot histograms
-    plt.figure(figsize=(10, 6))
-    plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
-    plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
-    plt.title(f'Distribution of Averages for {metric}: NoMinMo vs MinMo')
-    if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
-        plt.xlabel('Millimetres')
-    elif metric in ['roll', 'pitch', 'yaw']:
-        plt.xlabel('Degrees')
-    elif metric in ['outliers']:
-        plt.xlabel('Percentages')
+        # Plot histograms
+        plt.figure(figsize=(10, 6))
+        plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
+        plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
+        plt.title(f'Distribution of {statistic} for {metric}')
+        if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
+            plt.xlabel('Millimetres')
+        elif metric in ['roll', 'pitch', 'yaw']:
+            plt.xlabel('Degrees')
+        elif metric in ['outliers']:
+            plt.xlabel('Percentages')
 
-    plt.ylabel('Count')
-    plt.legend()
-    plt.grid(True)
+        plt.ylabel('Count')
+        plt.legend()
+        plt.grid(True)
 
-    # Save the plot
-    plot_output_path = deriv_fldr / f'plots/distribution_{metric}_nominmo_vs_minmo.png'
-    plot_output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Plot saved to {plot_output_path}")
+        # Save the plot
+        plot_output_path = deriv_fldr / f'plots/distribution_{metric}_{statistic}_nominmo_vs_minmo.png'
+        plot_output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Plot saved to {plot_output_path}")
+
+        if metric in ['enorm', 'mm_delt', 'outliers']:
+            # Plot histograms
+            plt.figure(figsize=(10, 6))
+            plt.hist(np.log1p(nominmo_series), bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
+            plt.hist(np.log1p(minmo_series), bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
+            plt.title(f'Distribution of {statistic} for {metric}, log transformed')
+            if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
+                plt.xlabel('Millimetres')
+            elif metric in ['roll', 'pitch', 'yaw']:
+                plt.xlabel('Degrees')
+            elif metric in ['outliers']:
+                plt.xlabel('Percentages')
+
+            plt.ylabel('Count')
+            plt.legend()
+            plt.grid(True)
+
+            # Save the plot
+            plot_output_path = deriv_fldr / f'plots/distribution_{metric}_{statistic}_log_transformed_nominmo_vs_minmo.png'
+            plot_output_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"Plot saved to {plot_output_path}")
 
     # Descriptive statistics
     nominmo_stats = nominmo_series.describe()
