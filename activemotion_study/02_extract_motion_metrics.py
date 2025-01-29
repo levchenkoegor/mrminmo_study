@@ -133,6 +133,9 @@ for subj_id in subjects:
                                 "metric": param,
                                 "trial": trial.tolist(),
                                 "avg": avg,
+                                "med": np.median(trial),
+                                "max": np.max(trial),
+                                "min": np.min(trial)
                             })
                 else:
                     trials, averages = get_post_onset_metrics(motion_data, onset_times, col_idx=0)
@@ -144,6 +147,9 @@ for subj_id in subjects:
                             "metric": metric_name,
                             "trial": trial.tolist(),
                             "avg": avg,
+                            "med": np.median(trial),
+                            "max": np.max(trial),
+                            "min": np.min(trial)
                         })
 
 # Save to CSV
