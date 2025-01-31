@@ -371,7 +371,11 @@ for subject_dir in "${subjects_sequence[@]}"; do
 done
 
 # Zip derivatives
-find ${data_folder}/../derivatives -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+if [[ "$dummydata" -eq 1 ]]; then
+  find ${data_folder}/../derivatives/dummydata_nii -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+else
+  find ${data_folder}/../derivatives -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+fi
 
 # Some useful links:
 # https://neurostars.org/t/missing-mm-and-mm-delt-files-for-all-runs-in-afni-output/31415
