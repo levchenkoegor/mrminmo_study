@@ -160,7 +160,9 @@ df = pd.DataFrame(results)
 
 if dummydata == 1:
     df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_all_dummydata.csv", index=False)
+    print("Metrics saved to df_motion_metrics_all_dummydata.csv")
 else:
     df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_all.csv", index=False)
+    print("Metrics saved to df_motion_metrics_all.csv")
 
-print("Metrics saved to df_motion_metrics_all.csv")
+
