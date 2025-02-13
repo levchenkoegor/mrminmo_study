@@ -58,11 +58,13 @@ for metric in metrics_to_analyze:
     if shapiro_nominmo.pvalue > 0.05 and shapiro_minmo.pvalue > 0.05 and levene_test.pvalue > 0.05:
         t_test = ttest_ind(minmo_series, nominmo_series, alternative='less')
         test_name = "One-tailed T-test (MinMo < NoMinMo)"
+        test_pvalue = t_test.pvalue
     else:
         u_test = mannwhitneyu(minmo_series, nominmo_series, alternative='less')
         test_name = "One-tailed Mann-Whitney U (MinMo < NoMinMo)"
+        test_pvalue = u_test.pvalue
 
-    test_pvalue = test_result.pvalue
+    # Append p-value for FDR correction
     p_values.append(test_pvalue)
 
     # Append descriptive statistics and test results
@@ -70,8 +72,14 @@ for metric in metrics_to_analyze:
         "metric": metric,
         "NoMinMo_mean": np.mean(nominmo_series),
         "NoMinMo_std": np.std(nominmo_series),
+        "NoMinMo_median": np.median(nominmo_series),
+        "NoMinMo_min": np.min(nominmo_series),
+        "NoMinMo_max": np.max(nominmo_series),
         "MinMo_mean": np.mean(minmo_series),
         "MinMo_std": np.std(minmo_series),
+        "MinMo_median": np.median(minmo_series),
+        "MinMo_min": np.min(minmo_series),
+        "MinMo_max": np.max(minmo_series),
         "normality_NoMinMo_p": shapiro_nominmo.pvalue,
         "normality_MinMo_p": shapiro_minmo.pvalue,
         "levene_p": levene_test.pvalue,
