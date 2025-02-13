@@ -4,18 +4,17 @@ from pathlib import Path
 
 # Function to load motion data
 
-def load_motion_data(motion_file):
+def load_motion_data(motion_file, skip_lines=0):
     """
-    Load motion data from file, skipping header lines in motion files.
+    Load motion data from file, skipping specified number of lines.
     """
     if not motion_file.exists():
         print(f"Motion file not found: {motion_file.name}. Skipping...")
         return None
 
     with open(motion_file, 'r') as file:
-        motion_data = np.array([
-            list(map(float, line.strip().split())) for line in file if not line.startswith('#')
-        ])
+        lines = file.readlines()[skip_lines:]
+        motion_data = np.array([list(map(float, line.strip().split())) for line in lines])
     return motion_data
 
 # Paths
@@ -38,16 +37,16 @@ for subj_id in subjects:
 
         # Define metric files
         metric_files = {
-            "enorm": cond_folder / f"motion_{subj_id}_enorm.1D",
-            "mm": cond_folder / "mm_rall",
-            "mm_delt": cond_folder / "mm_delt_rall",
-            "outliers": cond_folder / "outcount_rall.1D",
-            "dfile": cond_folder / "dfile_rall.1D",
+            "enorm": (cond_folder / f"motion_{subj_id}_enorm.1D", 0),
+            "mm": (cond_folder / "mm.r01", 2),  # Skip first 2 lines
+            "mm_delt": (cond_folder / "mm.r01_delt", 2),  # Skip first 2 lines
+            "outliers": (cond_folder / "outcount_rall.1D", 0),
+            "dfile": (cond_folder / "dfile_rall.1D", 0),
         }
 
         # Process each metric
-        for metric_name, motion_file in metric_files.items():
-            motion_data = load_motion_data(motion_file)
+        for metric_name, (motion_file, skip_lines) in metric_files.items():
+            motion_data = load_motion_data(motion_file, skip_lines)
             if motion_data is None:
                 continue
 
@@ -61,6 +60,7 @@ for subj_id in subjects:
                         "condition": condition,
                         "metric": param,
                         "trial": motion_data[:, col_idx].tolist(),
+                        "N": len(motion_data[:, col_idx]),
                         "avg": avg,
                         "med": np.median(motion_data[:, col_idx]),
                         "max": np.max(motion_data[:, col_idx]),
@@ -73,6 +73,7 @@ for subj_id in subjects:
                     "condition": condition,
                     "metric": metric_name,
                     "trial": motion_data[:, 0].tolist(),
+                    "N": len(motion_data[:, 0]),
                     "avg": avg,
                     "med": np.median(motion_data[:, 0]),
                     "max": np.max(motion_data[:, 0]),
