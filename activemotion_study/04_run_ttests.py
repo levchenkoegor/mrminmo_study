@@ -105,12 +105,12 @@ for metric in metrics_to_analyze:
 
     # Perform hypothesis test based on assumptions
     if shapiro_nominmo.pvalue > 0.05 and shapiro_minmo.pvalue > 0.05 and levene_test.pvalue > 0.05:
-        t_test = ttest_ind(nominmo_series, minmo_series)
-        test_name = "T-test"
+        t_test = ttest_ind(minmo_series, nominmo_series, alternative='less')
+        test_name = "One-tailed T-test (MinMo < NoMinMo)"
         test_pvalue = t_test.pvalue
     else:
-        u_test = mannwhitneyu(nominmo_series, minmo_series)
-        test_name = "Mann-Whitney U"
+        u_test = mannwhitneyu(minmo_series, nominmo_series, alternative='less')
+        test_name = "One-tailed Mann-Whitney U (MinMo < NoMinMo)"
         test_pvalue = u_test.pvalue
 
     # Append p-value for FDR correction
