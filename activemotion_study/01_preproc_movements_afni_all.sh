@@ -346,12 +346,12 @@ for subject_dir in "${subjects_sequence[@]}"; do
               (
                 tcsh -xef "$script_path" 2>&1 | tee "$output_path"
 
-                # Concatenate mm files, ignoring the first two lines
+                # Concatenate mm files, ignoring the first two lines (accidentally concatenating same file twice!)
                 for file in "${results_path}"/mm.r[0-9][0-9]; do
                     tail -n +3 "$file" >> "${results_path}/mm_rall"
                 done
 
-                # Concatenate mm_delt files, ignoring the first two lines
+                # Concatenate mm_delt files, ignoring the first two lines (accidentally concatenating same file twice!)
                 for file in "${results_path}"/mm.r[0-9][0-9]_delt; do
                     tail -n +3 "$file" >> "${results_path}/mm_delt_rall"
                 done
