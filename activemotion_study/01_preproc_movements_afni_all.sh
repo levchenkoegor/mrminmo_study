@@ -372,7 +372,7 @@ done
 
 # Zip derivatives
 if [[ "$dummydata" -eq 1 ]]; then
-  find ${data_folder}/../derivatives/dummydata_nii -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+  find ${data_folder}/../derivatives/sub-dummydata_nii -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 else
   find ${data_folder}/../derivatives -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 fi
