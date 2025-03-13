@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivatives
 export stim_folder=/data/elevchenko/MinMo_movements/activemotion_study/stimuli_tent
 
@@ -7,7 +8,7 @@ export stim_folder=/data/elevchenko/MinMo_movements/activemotion_study/stimuli_t
 subjects=$(ls $data_folder | grep -oP '^sub-\K24\d{4}[A-Z]{2}' | sed 's/$/_nii/')
 tr_counts=1515 # all runs (505, 505, 505)
 
-# 1 subj takes around 1.5 hours
+
 for subj in "241031DC_nii"; do #$subjects; do
   for cond in "MinMo" "NoMinMo"; do
 
@@ -67,6 +68,8 @@ for subj in "241031DC_nii"; do #$subjects; do
         -fitts ${subj_preproc_outputs}/fitts.${subj} \
         -errts ${subj_preproc_outputs}/errts.${subj} \
         -bucket ${subj_preproc_outputs}/stats.${subj}
-
   done
 done
+
+### Notes:
+# 1 subj takes around 1.5 hours
