@@ -41,6 +41,13 @@ for subj in "sub-241031DC"; do #$subjects; do
                     --proj frac 0 1 0.1 \
                     --o ${subj_preproc_outputs}/${roi}_rh.nii.gz \
                     --temp $mov_file
+
     done
   done
 done
+
+
+### Notes:
+# Abbreviations: https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/Abbreviations-Table1.pdf
+# Download parcellations: wget -r -np -nH https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/
+#
