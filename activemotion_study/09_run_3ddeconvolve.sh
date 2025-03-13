@@ -64,10 +64,32 @@ for subj in "241031DC_nii"; do #$subjects; do
         -stim_times 8 ${stim_folder}/subjectwise/condition-sayHellotheremum_sub-${subj}_cond-${cond}_runs-*.1D 'TENT(4.8, 8.8, 6)' \
         -stim_times 9 ${stim_folder}/subjectwise/condition-scratchleftcheek_sub-${subj}_cond-${cond}_runs-*.1D 'TENT(4.8, 8.8, 6)' \
         -stim_times 10 ${stim_folder}/subjectwise/condition-scratchrightcheek_sub-${subj}_cond-${cond}_runs-*.1D 'TENT(4.8, 8.8, 6)' \
-        -fout -tout -x1D ${subj_preproc_outputs}/X.xmat.1D -xjpeg ${subj_preproc_outputs}/X.jpg \
-        -fitts ${subj_preproc_outputs}/fitts.${subj} \
-        -errts ${subj_preproc_outputs}/errts.${subj} \
-        -bucket ${subj_preproc_outputs}/stats.${subj}
+        -iresp 1 ${subj_preproc_outputs}/iresp_cough_tent_48-88.nii.gz \
+        -iresp 2 ${subj_preproc_outputs}/iresp_crosslegsleftontop_tent_48-88.nii.gz \
+        -iresp 3 ${subj_preproc_outputs}/iresp_crosslegsrightontop_tent_48-88.nii.gz \
+        -iresp 4 ${subj_preproc_outputs}/iresp_lefthandtorightthigh_tent_48-88.nii.gz \
+        -iresp 5 ${subj_preproc_outputs}/iresp_righthandtoleftthigh_tent_48-88.nii.gz \
+        -iresp 6 ${subj_preproc_outputs}/iresp_raiselefthip_tent_48-88.nii.gz \
+        -iresp 7 ${subj_preproc_outputs}/iresp_raiserighthip_tent_48-88.nii.gz \
+        -iresp 8 ${subj_preproc_outputs}/iresp_sayHellotheremum_tent_48-88.nii.gz \
+        -iresp 9 ${subj_preproc_outputs}/iresp_scratchleftcheek_tent_48-88.nii.gz \
+        -iresp 10 ${subj_preproc_outputs}/iresp_scratchrightcheek_tent_48-88.nii.gz \
+        -gltsym 'SYM: +cough[0..5]' -glt_label 1 cough_overall \
+        -gltsym 'SYM: +crosslegsleftontop[0..5]' -glt_label 2 crosslegsleftontop_overall \
+        -gltsym 'SYM: +crosslegsrightontop[0..5]' -glt_label 3 crosslegsrightontop_overall \
+        -gltsym 'SYM: +lefthandtorightthigh[0..5]' -glt_label 4 lefthandtorightthigh_overall \
+        -gltsym 'SYM: +righthandtoleftthigh[0..5]' -glt_label 5 righthandtoleftthigh_overall \
+        -gltsym 'SYM: +raiselefthip[0..5]' -glt_label 6 raiselefthip_overall \
+        -gltsym 'SYM: +raiserighthip[0..5]' -glt_label 7 raiserighthip_overall \
+        -gltsym 'SYM: +sayHellotheremum[0..5]' -glt_label 8 sayHellotheremum_overall \
+        -gltsym 'SYM: +scratchleftcheek[0..5]' -glt_label 9 scratchleftcheek_overall \
+        -gltsym 'SYM: +scratchrightcheek[0..5]' -glt_label 10 scratchrightcheek_overall \
+        -fout -tout -x1D ${subj_preproc_outputs}/X_tent_48-88.xmat.1D -xjpeg ${subj_preproc_outputs}/X_tent_48-88.jpg \
+        -fitts ${subj_preproc_outputs}/fitts_tent_48-88.${subj} \
+        -errts ${subj_preproc_outputs}/errts_tent_48-88.${subj} \
+        -bucket ${subj_preproc_outputs}/stats_tent_48-88.${subj}
+
+    mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_48-88.REML_cmd
   done
 done
 
