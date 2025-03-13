@@ -9,7 +9,7 @@ export SUBJECTS_DIR=/data/elevchenko/MinMo_movements/activemotion_study/derivati
 export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivatives
 
 # Extract subject IDs dynamically, removing 'sub-' prefix and appending '_nii'
-subjects=$(ls $data_folder | grep -oP '^sub-\K24\d{4}[A-Z]{2}')
+subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
 
 for subj in "sub-241031DC"; do #$subjects; do
   for cond in "MinMo" "NoMinMo"; do
