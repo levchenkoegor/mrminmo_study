@@ -303,7 +303,6 @@ for subject_dir in "${subjects_sequence[@]}"; do
                   -volreg_align_to first \
                   -volreg_opts_vr -twopass -twodup -maxdisp1D mm'.r$run' \
                   -volreg_compute_tsnr yes \
-                  -remove_preproc_files \
                   -html_review_style pythonic
 
               (
