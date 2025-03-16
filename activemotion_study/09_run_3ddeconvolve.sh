@@ -93,5 +93,7 @@ for subj in "241031DC_nii"; do #$subjects; do
   done
 done
 
+find ${data_folder} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+
 ### Notes:
 # 1 subj takes around 1.5 hours
