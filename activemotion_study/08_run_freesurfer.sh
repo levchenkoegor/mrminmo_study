@@ -25,12 +25,11 @@ fi
 # Run
 for subj_id in $subjects; do
 
-    for bad_subj in "${bad_subjects[@]}"; do
-        if [[ "$subj_id" == "$bad_subj" ]]; then
-            echo "Skipping bad subject: $subj_id"
-            continue 2
-        fi
-    done
+    # Skip if the subject is in either the bad or done list
+    if [[ " ${bad_subjects[*]} " =~ " ${subj_id} " ]] || [[ " ${done_subjects[*]} " =~ " ${subj_id} " ]]; then
+        echo "Skipping subject: $subj_id (bad or already processed)"
+        continue
+    fi
 
     input_mprages=($data_folder/${subj_id}_nii/*MPRAGE*.nii.gz)
     echo "Processing subject: $subj_id"
