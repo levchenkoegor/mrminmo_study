@@ -13,7 +13,7 @@ subjects=$(ls $SUBJECTS_DIR | grep -oP '^sub-24\d{4}[A-Z]{2}')
 for subj in "sub-241031DC"; do #$subjects; do
   echo "Processing subject: $subj"
 
-  for cond in "MinMo"; do # "NoMinMo"; do
+  for cond in "MinMo" "NoMinMo"; do
 
     subj_preproc_outputs=${data_folder}/${subj}_nii/${subj}_nii_task-mvts_cond-${cond}/${subj}_nii_task-mvts_cond-${cond}.results
 
