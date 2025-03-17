@@ -10,44 +10,58 @@ export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivativ
 # Extract subject IDs dynamically
 subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
 
-# List of ROI labels
-roi_labels=("ROI1" "ROI2" "ROI3") # need to adjust
-
 for subj in "sub-241031DC"; do #$subjects; do
+
+    # fsaverage sereno to subject-wise space (right and left hemi)
+    mkdir $SUBJECTS_DIR/${subj}_test/label
+    mri_surf2surf --srcsubject fsaverage_sereno2022 \
+                --trgsubject $subj \
+                --hemi rh \
+                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/rh.aparc.annot \
+                --tval $SUBJECTS_DIR/${subj}_test/label/rh.aparc.annot
+
+    mri_surf2surf --srcsubject fsaverage_sereno2022 \
+                --trgsubject $subj \
+                --hemi lh \
+                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/lh.aparc.annot \
+                --tval $SUBJECTS_DIR/${subj}_test/label/lh.aparc.annot
+
+
   for cond in "MinMo" "NoMinMo"; do
 
     subj_preproc_outputs=${data_folder}/${subj}_nii/${subj}_nii_task-mvts_cond-${cond}/${subj}_nii_task-mvts_cond-${cond}.results
 
-    # Define required files
-    mov_file=${subj_preproc_outputs}/vr_base+orig.nii.gz  # EPI motion reference
+    # Define required files for mri_labe2vol
+    mov_file=${subj_preproc_outputs}/vr_base.nii.gz  # EPI motion reference
     reg_file=${subj_preproc_outputs}/${subj}_bbreg.dat    # Registration file
 
-    # Create subject-specific ROI masks in EPI space
-    for roi in "${roi_labels[@]}"; do
-      mri_label2vol --label $SUBJECTS_DIR/$subj/label/lh.${roi}.label \
-                    --subject $subj \
-                    --reg $reg_file \
-                    --hemi lh \
-                    --fillthresh 0.3 \
-                    --proj frac 0 1 0.1 \
-                    --o ${subj_preproc_outputs}/${roi}_lh.nii.gz \
-                    --temp $mov_file
+    # label2vol
+    mri_label2vol --annot aparc \
+                  --subject $subj \
+                  --hemi lh \
+                  --reg $reg_file \
+                  --o $SUBJECTS_DIR/${subj}_test/lh.aparc_epi_cond-${cond}.nii.gz \
+                  --temp $mov_file
 
-      mri_label2vol --label $SUBJECTS_DIR/$subj/label/rh.${roi}.label \
-                    --subject $subj \
-                    --reg $reg_file \
-                    --hemi rh \
-                    --fillthresh 0.3 \
-                    --proj frac 0 1 0.1 \
-                    --o ${subj_preproc_outputs}/${roi}_rh.nii.gz \
-                    --temp $mov_file
+    mri_label2vol --annot aparc \
+                  --subject $subj \
+                  --hemi rh \
+                  --reg $reg_file \
+                  --o $SUBJECTS_DIR/${subj}_test/rh.aparc_epi_cond-${cond}.nii.gz \
+                  --temp $mov_file
 
-    done
   done
 done
 
 
 ### Notes:
 # Abbreviations: https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/Abbreviations-Table1.pdf
-# Download parcellations: wget -r -np -nH https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/
-#
+# Download Sereno (2022) fsaverage: https://pages.ucsd.edu/~msereno/csurf/
+
+# H1.4
+# mri_surf2surf - fsaverage to subjectwise space
+# mri_label2vol - subjectwise space to EPI subjectspace
+
+# H1.5
+# mri_label2vol
+# project out of cortex: lateralorbitofrontal, lateroccipital
