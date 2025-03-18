@@ -24,3 +24,6 @@ for subj in "sub-241031DC"; do #$subjects; do
                --T2
  done
 done
+
+### Notes:
+# freeview -v $SUBJECTS_DIR/$subj/mri/T1.mgz ${subj_preproc_outputs}/vr_base.nii.gz:reg=${subj_preproc_outputs}/${subj}_bbreg.dat
