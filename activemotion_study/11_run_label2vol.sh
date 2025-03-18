@@ -16,13 +16,13 @@ for subj in "sub-241031DC"; do #$subjects; do
     mri_surf2surf --srcsubject fsaverage_sereno2022 \
                 --trgsubject $subj \
                 --hemi rh \
-                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/rh.aparc.annot \
+                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/rh-CsurfMaps1.annot \
                 --tval $SUBJECTS_DIR/${subj}/label/rh.aparc_s2s_sereno.annot
 
     mri_surf2surf --srcsubject fsaverage_sereno2022 \
                 --trgsubject $subj \
                 --hemi lh \
-                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/lh.aparc.annot \
+                --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/lh-CsurfMaps1.annot \
                 --tval $SUBJECTS_DIR/${subj}/label/lh.aparc_s2s_sereno.annot
 
 
@@ -56,6 +56,7 @@ done
 ### Notes:
 # Abbreviations: https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/Abbreviations-Table1.pdf
 # Download Sereno (2022) fsaverage: https://pages.ucsd.edu/~msereno/csurf/
+# Labels: https://pages.ucsd.edu/~msereno/csurf/fsaverage-labels/CsurfMaps1-parcellation/CsurfMaps1.ctab.txt
 
 # H1.4
 # mri_surf2surf - fsaverage to subjectwise space
