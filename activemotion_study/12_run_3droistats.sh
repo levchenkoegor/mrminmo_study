@@ -25,10 +25,10 @@ for subj in "sub-241031DC"; do #$subjects; do
     rh_roi_mask=$SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}.nii.gz
 
     # Extract ROI statistics for left hemisphere
-    3dROIstats -mask $lh_roi_mask $stats_file > ${subj_preproc_outputs}/roistats_lh_cond-${cond}.csv
+    3dROIstats -mask $lh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_lh_cond-${cond}.csv
 
     # Extract ROI statistics for right hemisphere
-    3dROIstats -mask $rh_roi_mask $stats_file > ${subj_preproc_outputs}/roistats_rh_cond-${cond}.csv
+    3dROIstats -mask $rh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_rh_cond-${cond}.csv
 
   done
 done
