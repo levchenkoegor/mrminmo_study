@@ -21,8 +21,8 @@ for subj in "sub-241031DC"; do #$subjects; do
     stats_file=${subj_preproc_outputs}/stats_tent_48-88.${subj#sub-}_nii+orig.HEAD
 
     # Define ROI masks in EPI space
-    lh_roi_mask=$SUBJECTS_DIR/${subj}_test/lh.aparc_epi_cond-${cond}.nii.gz
-    rh_roi_mask=$SUBJECTS_DIR/${subj}_test/rh.aparc_epi_cond-${cond}.nii.gz
+    lh_roi_mask=$SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}.nii.gz
+    rh_roi_mask=$SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}.nii.gz
 
     # Extract ROI statistics for left hemisphere
     3dROIstats -mask $lh_roi_mask $stats_file > ${subj_preproc_outputs}/roistats_lh_cond-${cond}.csv
