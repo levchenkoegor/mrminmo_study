@@ -13,18 +13,17 @@ subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
 for subj in "sub-241031DC"; do #$subjects; do
 
     # fsaverage sereno to subject-wise space (right and left hemi)
-    mkdir $SUBJECTS_DIR/${subj}_test/label
     mri_surf2surf --srcsubject fsaverage_sereno2022 \
                 --trgsubject $subj \
                 --hemi rh \
                 --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/rh.aparc.annot \
-                --tval $SUBJECTS_DIR/${subj}_test/label/rh.aparc.annot
+                --tval $SUBJECTS_DIR/${subj}/label/rh.aparc_s2s_sereno.annot
 
     mri_surf2surf --srcsubject fsaverage_sereno2022 \
                 --trgsubject $subj \
                 --hemi lh \
                 --sval-annot $SUBJECTS_DIR/fsaverage_sereno2022/label/lh.aparc.annot \
-                --tval $SUBJECTS_DIR/${subj}_test/label/lh.aparc.annot
+                --tval $SUBJECTS_DIR/${subj}/label/lh.aparc_s2s_sereno.annot
 
 
   for cond in "MinMo" "NoMinMo"; do
@@ -32,22 +31,22 @@ for subj in "sub-241031DC"; do #$subjects; do
     subj_preproc_outputs=${data_folder}/${subj}_nii/${subj}_nii_task-mvts_cond-${cond}/${subj}_nii_task-mvts_cond-${cond}.results
 
     # Define required files for mri_labe2vol
-    mov_file=${subj_preproc_outputs}/vr_base.nii.gz  # EPI motion reference
+    mov_file=${subj_preproc_outputs}/vr_base.nii.gz       # EPI motion reference
     reg_file=${subj_preproc_outputs}/${subj}_bbreg.dat    # Registration file
 
-    # label2vol
-    mri_label2vol --annot aparc \
+    # label2vol (right and left hemi)
+    mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/lh.aparc_s2s_sereno.annot \
                   --subject $subj \
                   --hemi lh \
                   --reg $reg_file \
-                  --o $SUBJECTS_DIR/${subj}_test/lh.aparc_epi_cond-${cond}.nii.gz \
+                  --o $SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}.nii.gz \
                   --temp $mov_file
 
-    mri_label2vol --annot aparc \
+    mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/rh.aparc_s2s_sereno.annot \
                   --subject $subj \
                   --hemi rh \
                   --reg $reg_file \
-                  --o $SUBJECTS_DIR/${subj}_test/rh.aparc_epi_cond-${cond}.nii.gz \
+                  --o $SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}.nii.gz \
                   --temp $mov_file
 
   done
