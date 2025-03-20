@@ -9,7 +9,7 @@ subjects=$(ls $data_folder | grep -oP '^sub-\K24\d{4}[A-Z]{2}' | sed 's/$/_nii/'
 tr_counts=1515 # all runs (505, 505, 505)
 
 
-for subj in "241031DC_nii"; do #$subjects; do
+for subj in $subjects; do
   for cond in "MinMo" "NoMinMo"; do
 
     subj_preproc_outputs=${data_folder}/sub-${subj}/sub-${subj}_task-mvts_cond-${cond}/sub-${subj}_task-mvts_cond-${cond}.results
@@ -89,11 +89,16 @@ for subj in "241031DC_nii"; do #$subjects; do
         -errts ${subj_preproc_outputs}/errts_tent_48-88.${subj} \
         -bucket ${subj_preproc_outputs}/stats_tent_48-88.${subj}
 
-    mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_48-88.REML_cmd
+    mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/
+    bash ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_48-88.REML_cmd
+
   done
+
+  # Compress files
+  find ${data_folder} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+
 done
 
-find ${data_folder} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 
 ### Notes:
 # 1 subj takes around 1.5 hours
