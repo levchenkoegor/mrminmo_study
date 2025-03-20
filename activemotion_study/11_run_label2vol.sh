@@ -10,7 +10,7 @@ export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivativ
 # Extract subject IDs dynamically
 subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
 
-for subj in "sub-241031DC"; do #$subjects; do
+for subj in $subjects; do
 
     # fsaverage sereno to subject-wise space (right and left hemi)
     mri_surf2surf --srcsubject fsaverage_sereno2022 \
@@ -34,10 +34,12 @@ for subj in "sub-241031DC"; do #$subjects; do
     mov_file=${subj_preproc_outputs}/vr_base.nii.gz       # EPI motion reference
     reg_file=${subj_preproc_outputs}/${subj}_bbreg.dat    # Registration file
 
-    # label2vol (right and left hemi)
+    # label2vol
     mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/lh.aparc_s2s_sereno.annot \
                   --subject $subj \
                   --hemi lh \
+                  --proj frac 0 0.8 0.2 \
+                  --fillthresh 0.2 \
                   --reg $reg_file \
                   --o $SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}.nii.gz \
                   --temp $mov_file
@@ -45,8 +47,30 @@ for subj in "sub-241031DC"; do #$subjects; do
     mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/rh.aparc_s2s_sereno.annot \
                   --subject $subj \
                   --hemi rh \
+                  --proj frac 0 0.8 0.2 \
+                  --fillthresh 0.2 \
                   --reg $reg_file \
                   --o $SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}.nii.gz \
+                  --temp $mov_file
+
+
+    # label2vol (OUTSIDE OF THE BRAIN)
+    mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/lh.aparc_s2s_sereno.annot \
+                  --subject $subj \
+                  --hemi lh \
+                  --proj frac 1 2.8 0.2 \
+                  --fillthresh 0.2 \
+                  --reg $reg_file \
+                  --o $SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}_outter.nii.gz \
+                  --temp $mov_file
+
+    mri_label2vol --annot $SUBJECTS_DIR/${subj}/label/rh.aparc_s2s_sereno.annot \
+                  --subject $subj \
+                  --hemi rh \
+                  --proj frac 1 2.8 0.2 \
+                  --fillthresh 0.2 \
+                  --reg $reg_file \
+                  --o $SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}_outter.nii.gz \
                   --temp $mov_file
 
   done
