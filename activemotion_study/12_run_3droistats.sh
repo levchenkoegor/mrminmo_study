@@ -10,7 +10,7 @@ export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivativ
 # Extract subject IDs dynamically
 subjects=$(ls $SUBJECTS_DIR | grep -oP '^sub-24\d{4}[A-Z]{2}')
 
-for subj in "sub-241031DC"; do #$subjects; do
+for subj in $subjects; do
   echo "Processing subject: $subj"
 
   for cond in "MinMo" "NoMinMo"; do
