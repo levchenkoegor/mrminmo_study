@@ -95,7 +95,7 @@ for subj in $subjects; do
   done
 
   # Compress files
-  find ${data_folder} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+  find ${subj_preproc_outputs} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 
 done
 
