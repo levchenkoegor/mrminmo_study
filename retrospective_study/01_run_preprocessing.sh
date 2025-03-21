@@ -72,7 +72,7 @@ for dataset in "NNdb" "BTF"; do
           -blocks tcat volreg scale \
           -tcat_remove_first_trs $n_trs_remove \
           -volreg_align_to first \
-          -volreg_opts_vr -twopass -twodup -maxdisp1D mm \
+          -volreg_opts_vr -twopass -twodup -maxdisp1D mm'.r$run' \
           -volreg_compute_tsnr yes \
           -remove_preproc_files \
           -html_review_style pythonic
@@ -97,4 +97,4 @@ done
 
 
 # Useful links:
-# https://github.com/lab-lab/nndb/blob/master/fMRI_preprocessing/preprocessing_functional_slice_timing.sh#L24C1-L24C74
+# https://github.com/lab-lab/nndb/tree/master/fMRI_preprocessing
