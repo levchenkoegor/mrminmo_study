@@ -5,6 +5,7 @@
 ###
 
 export proj_folder=/data/elevchenko/MinMo_movements/retrospective_study
+export output_folder=/egor/MinMo_movements/retrospective_study
 max_jobs=8  # Set maximum number of parallel jobs
 
 
@@ -12,13 +13,13 @@ for dataset in "NNdb" "BTF"; do
 
   if [ "$dataset" == "NNdb" ]; then
     export raw_data_folder=/data/ds002837
-    export data_deriv="$proj_folder"/derivatives_nndb
+    export data_deriv="$output_folder"/derivatives_nndb
     subjects=$(ls -d "$raw_data_folder"/sub-* | grep -oP 'sub-\K\d+' | sort -n)
     #subjects="1 2" # just for a test
     n_trs_remove=8
   elif [ "$dataset" == "BTF" ]; then
     export raw_data_folder=/data/elevchenko/MovieProject2/bids_data
-    export data_deriv="$proj_folder"/derivatives_btf
+    export data_deriv="$output_folder"/derivatives_btf
     subjects=$(ls -d "$raw_data_folder"/sub-* | grep -oP 'sub-\K\d+' | sort -n)
     #subjects="01 02" # just for a test
     n_trs_remove="8 16 16"
@@ -69,11 +70,12 @@ for dataset in "NNdb" "BTF"; do
           -script "$script_path" \
           -out_dir "$results_path" \
           -dsets "${dsets[@]}" \
-          -blocks tcat volreg scale \
+          -blocks tcat volreg scale regress \
           -tcat_remove_first_trs $n_trs_remove \
           -volreg_align_to first \
           -volreg_opts_vr -twopass -twodup -maxdisp1D mm'.r$run' \
           -volreg_compute_tsnr yes \
+          -regress_polort 2 \
           -remove_preproc_files \
           -html_review_style pythonic
 
@@ -94,6 +96,9 @@ for dataset in "NNdb" "BTF"; do
 
   done
 done
+
+find ${output_folder}/derivatives_btf -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
+find ${output_folder}/derivatives_nndb -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 
 
 # Useful links:
