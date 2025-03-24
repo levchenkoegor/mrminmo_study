@@ -89,17 +89,20 @@ for dataset in "NNdb" "BTF"; do
       echo "Processing time for subject ${subj_id}: ${elapsed_time} seconds. Dataset - ${dataset}"
     ) & # Run in the background
 
-    # Limit number of parallel jobs
-    while [ "$(jobs -r | wc -l)" -ge "$max_jobs" ]; do
-      sleep 1
+    # Limit the number of parallel jobs
+    echo "Waiting... $(jobs -p | wc -l) jobs running"
+    while [ "$(jobs -p | wc -l)" -ge "$max_jobs" ]; do
+      sleep 5
     done
 
   done
 done
 
+wait
+echo "All jobs completed."
+
 find ${output_folder}/derivatives_btf -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
 find ${output_folder}/derivatives_nndb -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
-
 
 # Useful links:
 # https://github.com/lab-lab/nndb/tree/master/fMRI_preprocessing
