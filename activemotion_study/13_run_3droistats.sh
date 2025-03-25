@@ -26,9 +26,13 @@ for subj in $subjects; do
 
     # Extract ROI statistics for left hemisphere
     3dROIstats -mask $lh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_lh_cond-${cond}.csv
+    3dmaskdump -mask $lh_roi_mask $stats_file > ${subj_preproc_outputs}/voxels_masked_lh_cond-${cond}.csv
+    3dmaskdump -xyz -nozero -mask $lh_roi_mask $lh_roi_mask > ${subj_preproc_outputs}/voxels_labels_lh_cond-${cond}.csv
 
     # Extract ROI statistics for right hemisphere
     3dROIstats -mask $rh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_rh_cond-${cond}.csv
+    3dmaskdump -mask $rh_roi_mask $stats_file > ${subj_preproc_outputs}/voxels_masked_rh_cond-${cond}.csv
+    3dmaskdump -xyz -nozero -mask $rh_roi_mask $rh_roi_mask > ${subj_preproc_outputs}/voxels_labels_rh_cond-${cond}.csv
 
   done
 done
