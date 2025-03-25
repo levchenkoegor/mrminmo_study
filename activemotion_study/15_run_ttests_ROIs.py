@@ -11,7 +11,6 @@ deriv_fldr = Path(root_fldr / 'derivatives')
 subjects = [folder.name for folder in deriv_fldr.iterdir()
             if folder.is_dir() and folder.name.startswith("sub-")
             and folder.name.endswith("_nii") and folder.name != "sub-dummydata_nii"]
-subjects = ['sub-241031DC_nii']
 conditions = ["MinMo", "NoMinMo"]
 movements = ["cough", "crosslegsleftontop", "crosslegsrightontop", "lefthandtorightthigh",
              "righthandtoleftthigh", "raiselefthip", "raiserighthip",
@@ -19,7 +18,9 @@ movements = ["cough", "crosslegsleftontop", "crosslegsrightontop", "lefthandtori
 
 # Load csurf labels
 roi_labels = pd.read_csv(root_fldr / "labels_csurfmaps.csv")
-rois = ['3b_face', '3b_hand', '3b_foot', '3a_face', '3a_hand', '3a_foot']
+rois = ['3b_face', '3b_hand', '3b_foot', '3a_face', '3a_hand', '3a_foot',
+        '1_face', '1_hand', '1_foot',
+        '4_face', '4_hand', '4_foot']
 
 # Create a mapping of ROI names to their corresponding column names in roistats files
 roi_map = {roi: f"Mean_{roi_labels.loc[roi_labels['name'] == roi, 'id'].values[0]}"
