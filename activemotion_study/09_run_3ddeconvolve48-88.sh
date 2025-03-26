@@ -99,10 +99,9 @@ for subj in $subjects; do
       mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_48-88.REML_cmd
       bash ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_48-88.REML_cmd
 
+      # Compress files
+      find ${subj_preproc_outputs} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
     done
-
-    # Compress files
-    find ${subj_preproc_outputs} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
   ) & # Run in the background
 
   # Limit the number of parallel jobs
