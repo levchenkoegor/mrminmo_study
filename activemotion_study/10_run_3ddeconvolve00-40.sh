@@ -3,7 +3,8 @@
 
 export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivatives
 export stim_folder=/data/elevchenko/MinMo_movements/activemotion_study/stimuli_tent
-max_jobs=8 # Set maximum number of parallel jobs
+export max_jobs=8 # Set maximum number of parallel jobs
+export OMP_NUM_THREADS=3 # Set number of threads to prevent overuse
 
 # Extract subject IDs dynamically, removing 'sub-' prefix and appending '_nii'
 subjects=$(ls $data_folder | grep -oP '^sub-\K24\d{4}[A-Z]{2}' | sed 's/$/_nii/')
@@ -95,13 +96,12 @@ for subj in $subjects; do
           -errts ${subj_preproc_outputs}/errts_tent_00-40.${subj} \
           -bucket ${subj_preproc_outputs}/stats_tent_00-40.${subj}
 
-      mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/
+      mv ${subj_preproc_outputs}/../sub-${subj}_task-mvts_cond-${cond}.REML_cmd ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_00-40.REML_cmd
       bash ${subj_preproc_outputs}/sub-${subj}_task-mvts_cond-${cond}_tent_00-40.REML_cmd
 
+      # Compress files
+      find ${subj_preproc_outputs} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
     done
-
-    # Compress files
-    find ${subj_preproc_outputs} -type f \( -name "*.nii" -o -name "*.BRIK" \) -exec sh -c 'echo "Processing: {}"; gzip -f "{}"' \;
   ) & # Run in the background
 
   # Limit the number of parallel jobs
@@ -116,4 +116,4 @@ wait
 echo "All jobs completed."
 
 ### Notes:
-# 1 subj takes around 1.5 hours
+# 1 subj takes around 2.5 hours (both conditions)
