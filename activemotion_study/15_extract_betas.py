@@ -65,7 +65,7 @@ for subject in subjects:
                 rename_dict = {roi_map[roi]: roi for roi in rois if roi_map[roi] in roistats.columns}
                 roistats_targetrois = roistats_targetrois.rename(columns=rename_dict)
 
-                pattern = fr".*{movement}.*GLT.*Coef.*"
+                pattern = fr".*{movement}.*overall.*Coef.*"
                 match_rows = roistats_targetrois['Sub-brick'].str.contains(pattern, regex=True, na=False)
                 roistats_targetrois_mov = roistats_targetrois[match_rows]
 
