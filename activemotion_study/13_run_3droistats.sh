@@ -18,7 +18,7 @@ for subj in $subjects; do
     subj_preproc_outputs=${data_folder}/${subj}_nii/${subj}_nii_task-mvts_cond-${cond}/${subj}_nii_task-mvts_cond-${cond}.results
 
     # Define stat file
-    stats_file=${subj_preproc_outputs}/stats_tent_48-88.${subj#sub-}_nii+orig.HEAD
+    stats_file=${subj_preproc_outputs}/stats_tent_48-88.${subj#sub-}_nii_REML+orig.HEAD
 
     # Define ROI masks in EPI space
     lh_roi_mask=$SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}.nii.gz
