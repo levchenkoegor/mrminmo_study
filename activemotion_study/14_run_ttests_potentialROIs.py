@@ -48,9 +48,9 @@ for hemi in ['lh', 'rh']:
             roistats_df = pd.read_csv(roistats_path, sep='\t')
             subbrick_names = roistats_df['Sub-brick'].tolist()
 
-            # Filter only sub-brick names with *_GLT#0_Coef
+            # Filter only sub-brick names with *_overall#0_Coef
             valid_indices = [i for i, name in enumerate(subbrick_names)
-                             if re.search(r'overall_GLT#0_Coef', name)]
+                             if re.search(r'overall#0_Coef', name)]
 
             # Load data
             voxel_data = pd.read_csv(voxel_file, delim_whitespace=True, header=None)
