@@ -62,6 +62,7 @@ for subj_id in subjects:
                         "trial": motion_data[:, col_idx].tolist(),
                         "N": len(motion_data[:, col_idx]),
                         "avg": avg,
+                        "avg_abs": np.mean(np.abs(motion_data[:, col_idx])),
                         "med": np.median(motion_data[:, col_idx]),
                         "max": np.max(motion_data[:, col_idx]),
                         "min": np.min(motion_data[:, col_idx])
@@ -75,6 +76,7 @@ for subj_id in subjects:
                     "trial": motion_data[:, 0].tolist(),
                     "N": len(motion_data[:, 0]),
                     "avg": avg,
+                    "avg_abs": np.mean(np.abs(motion_data[:, 0])),
                     "med": np.median(motion_data[:, 0]),
                     "max": np.max(motion_data[:, 0]),
                     "min": np.min(motion_data[:, 0])
