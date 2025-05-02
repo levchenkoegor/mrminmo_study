@@ -55,6 +55,11 @@ for subject in subjects:
                              f'{subject}_task-mvts_cond-{cond}.results')
 
                 stats_file = subj_fldr / f'roistats_{hemi}_cond-{cond}.csv'
+
+                if not stats_file.exists():
+                    print(f"Missing file: {stats_file}")
+                    continue
+
                 roistats = pd.read_csv(stats_file, delimiter="\t")
                 roistats.columns = roistats.columns.str.strip()
 
