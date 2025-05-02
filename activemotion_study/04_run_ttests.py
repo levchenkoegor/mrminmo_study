@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
 from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
+from scipy.stats import gaussian_kde
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
@@ -33,10 +34,19 @@ for metric in metrics_to_analyze:
         nominmo_series = nominmo_data[statistic]
         minmo_series = minmo_data[statistic]
 
+        # Apply absolute values where relevant
+        if metric in ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']:
+            nominmo_series = nominmo_series.abs()
+            minmo_series = minmo_series.abs()
+
+        # Shared binning
+        combined_series = pd.concat([nominmo_series, minmo_series])
+        bin_edges = np.arange(combined_series.min(), combined_series.max() + 0.1, 0.1)
+
         # Plot histograms
         plt.figure(figsize=(10, 6))
-        plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
-        plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
+        plt.hist(nominmo_series, bins=bin_edges, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
+        plt.hist(minmo_series, bins=bin_edges, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
         plt.title(f'Distribution of {statistic} for {metric}')
         if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
             plt.xlabel('Millimetres')
@@ -49,8 +59,16 @@ for metric in metrics_to_analyze:
         plt.legend()
         plt.grid(True)
 
+        # KDE smoothing
+        kde_nominmo = gaussian_kde(nominmo_series)
+        kde_minmo = gaussian_kde(minmo_series)
+
+        x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
+        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * (bin_edges[1] - bin_edges[0]), color='blue', lw=2)
+        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
+
         # Save the plot
-        plot_output_path = deriv_fldr / f'plots/distribution_{metric}_{statistic}_nominmo_vs_minmo.png'
+        plot_output_path = deriv_fldr / f'plots_movements/distribution_{metric}_{statistic}_nominmo_vs_minmo.png'
         plot_output_path.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -74,7 +92,7 @@ for metric in metrics_to_analyze:
             plt.grid(True)
 
             # Save the plot
-            plot_output_path = deriv_fldr / f'plots/distribution_{metric}_{statistic}_log_transformed_nominmo_vs_minmo.png'
+            plot_output_path = deriv_fldr / f'plots_movements/distribution_{metric}_{statistic}_log_transformed_nominmo_vs_minmo.png'
             plot_output_path.parent.mkdir(parents=True, exist_ok=True)
             plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
             plt.close()
@@ -145,6 +163,6 @@ for i, corrected_p in enumerate(corrected_p_values):
 
 # Convert results to a DataFrame and save as CSV
 df_results = pd.DataFrame(descriptive_results).round(4)
-df_results.to_csv(deriv_fldr / "descriptive_statistics_results_with_fdr.csv", index=False)
+df_results.to_csv(deriv_fldr / 'descriptive_statistics_results_with_fdr.csv', index=False)
 
 print("Descriptive statistics and FDR-corrected test results saved to descriptive_statistics_results_with_fdr.csv")
