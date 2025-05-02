@@ -43,8 +43,8 @@ movement_roi_map = {
     "raiserighthip": ['3b_foot', '3a_foot', '1_foot', '4_foot'],
 }
 
-# Collect all beta values
-df_betas_rois = pd.DataFrame()
+# Collect all beta and t-values
+df_b_t_values_rois = pd.DataFrame()
 
 for subject in subjects:
     print(f'{subject} processing...')
@@ -55,7 +55,6 @@ for subject in subjects:
                              f'{subject}_task-mvts_cond-{cond}.results')
 
                 stats_file = subj_fldr / f'roistats_{hemi}_cond-{cond}.csv'
-
                 roistats = pd.read_csv(stats_file, delimiter="\t")
                 roistats.columns = roistats.columns.str.strip()
 
@@ -65,27 +64,38 @@ for subject in subjects:
                 rename_dict = {roi_map[roi]: roi for roi in rois if roi_map[roi] in roistats.columns}
                 roistats_targetrois = roistats_targetrois.rename(columns=rename_dict)
 
-                pattern = fr".*{movement}.*overall.*Coef.*"
-                match_rows = roistats_targetrois['Sub-brick'].str.contains(pattern, regex=True, na=False)
-                roistats_targetrois_mov = roistats_targetrois[match_rows]
+                # Match betas
+                beta_rows = roistats_targetrois[roistats_targetrois['Sub-brick'].str.contains(fr".*{movement}.*overall.*Coef.*", regex=True, na=False)]
+                # Match t-values
+                tval_rows = roistats_targetrois[roistats_targetrois['Sub-brick'].str.contains(fr".*{movement}.*overall.*Tstat.*", regex=True, na=False)]
 
-                if not roistats_targetrois_mov.empty:
-                    for _, row in roistats_targetrois_mov.iterrows():
-                        for roi in movement_roi_map[movement]:  # use only relevant ROIs
+                if not beta_rows.empty:
+                    for _, row in beta_rows.iterrows():
+                        for roi in movement_roi_map[movement]:
                             if roi in row:
                                 beta_value = row[roi]
-                                df_betas_rois = pd.concat([
-                                    df_betas_rois,
+                                t_value = None
+
+                                # Try to match a corresponding t-value row (assuming same ROI column and same order)
+                                if not tval_rows.empty:
+                                    t_row = tval_rows.iloc[0]  # assuming 1-to-1 match
+                                    if roi in t_row:
+                                        t_value = t_row[roi]
+
+                                df_b_t_values_rois = pd.concat([
+                                    df_b_t_values_rois,
                                     pd.DataFrame([{
                                         "subject": subject,
                                         "condition": cond,
                                         "movement": movement,
                                         "hemi": hemi,
                                         "ROI": roi,
-                                        "beta_coef": beta_value
+                                        "beta_coef": beta_value,
+                                        "t_value": t_value
                                     }])
                                 ], ignore_index=True)
 
-# Save betas
-df_betas_rois.to_csv(group_analysis_dir / 'df_betas_selectedROIs.csv', index=False)
-print(f'The file df_betas_selectedROIs.csv was saved')
+# Save results
+output_fname = 'df_b_t_values_selectedROIs.csv'
+df_b_t_values_rois.to_csv(group_analysis_dir / output_fname, index=False)
+print(f'The file {output_fname} was saved')
