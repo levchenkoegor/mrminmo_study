@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
-
+from collections import defaultdict
 
 # Function to parse timing data
 def parse_timing_data(timing_content):
@@ -81,13 +81,11 @@ def plot_each_trial_and_save(erp_data, time_window_corrected, headers, movement_
         axs[i].legend(loc='upper right')
         axs[i].grid(True)
 
-    #plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-{cond_name}, {subj_id}')
-    plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-*****, {subj_id}')
+    plt.suptitle(f'ERP for Roll, Pitch, Yaw (Degrees), movement-{movement_type}_cond-{cond_name}, {subj_id}')
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout to fit the title
 
     # Save the plot
-    #roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_roll_pitch_yaw.png'
-    roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-*****_roll_pitch_yaw.png'
+    roll_pitch_yaw_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_roll_pitch_yaw.png'
     plt.savefig(os.path.join(save_dir, roll_pitch_yaw_filename))
     print(f"File saved: {roll_pitch_yaw_filename}")  # Print message when file is saved
     plt.close(fig)
@@ -109,13 +107,11 @@ def plot_each_trial_and_save(erp_data, time_window_corrected, headers, movement_
         axs[i].legend(loc='upper right')
         axs[i].grid(True)
 
-    #plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-{cond_name}, {subj_id}')
-    plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-****, {subj_id}')
+    plt.suptitle(f'ERP for dS, dL, dP (mm), movement-{movement_type}_cond-{cond_name}, {subj_id}')
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout to fit the title
 
     # Save the plot
-    #dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_dS_dL_dP.png'
-    dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-*****_dS_dL_dP.png'
+    dS_dL_dP_filename = f'sub-{subj_id}_movement-{movement_type}_cond-{cond_name}_dS_dL_dP.png'
     plt.savefig(os.path.join(save_dir, dS_dL_dP_filename))
     print(f"File saved: {dS_dL_dP_filename}")  # Print message when file is saved
     plt.close(fig)
@@ -135,6 +131,9 @@ post_onset_duration = 8  # seconds after onset
 # Load sequences of conditions and runs from CSV
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
 sequence_df = pd.read_csv(sequence_file)
+
+# Dictionary to collect ERPs across subjects
+erp_by_cond_and_movement = defaultdict(list)
 
 subjects = sequence_df['Subj #']
 
@@ -194,9 +193,62 @@ for subj_id in subjects:
             # Extract ERP data
             erp_data_corrected = extract_corrected_erp(df, timing_data_global, pre_onset_duration, post_onset_duration, sampling_interval)
 
+            # Store ERP data for collapsing across subjects later
+            erp_by_cond_and_movement[(cond_name, movement_type)].append(erp_data_corrected)
+
             # Time window for plotting
             window_size = int((pre_onset_duration + post_onset_duration) / sampling_interval) + 1
             time_window_corrected = np.linspace(-pre_onset_duration, post_onset_duration, window_size)
 
             # Plot each trial separately and save the plots
-            plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, Path(deriv_fldr / 'ERP-like_plots' / subj_id))
+            #plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, Path(deriv_fldr / 'ERP-like_plots' / subj_id))
+
+# Plot grand average ERP across subjects (with trial-wise demeaning)
+def plot_grand_average_erp(erp_dict, time_window, headers, save_dir):
+    os.makedirs(save_dir, exist_ok=True)
+
+    for (cond_name, movement_type), list_of_erp_arrays in erp_dict.items():
+        if cond_name == 'MinMo':
+            continue # Skip minmo for now
+
+        # Concatenate all ERP trials from all subjects
+        all_erps = np.concatenate(list_of_erp_arrays, axis=0)  # shape: (total_trials, time, channels)
+
+        # Demean each trial (zero-center across time for each channel)
+        all_erps_demeaned = all_erps - np.nanmean(all_erps, axis=1, keepdims=True)
+
+        # Compute mean and SEM
+        mean_erp = np.nanmean(all_erps_demeaned, axis=0)  # shape: (time, channels)
+        sem_erp = np.nanstd(all_erps_demeaned, axis=0) / np.sqrt(np.sum(~np.isnan(all_erps_demeaned), axis=0))
+
+        # --- Plot yaw, pitch, roll ---
+        fig, ax = plt.subplots(figsize=(10, 6))
+        for j, column in enumerate(headers[:3]):
+            ax.errorbar(time_window, mean_erp[:, j], yerr=sem_erp[:, j], label=column, capsize=2)
+        ax.set_title(f'Grand Avg ERP (Yaw, Pitch, Roll)\ncond-{cond_name}, movement-{movement_type}')
+        ax.set_xlabel('Time (seconds)')
+        ax.set_ylabel('Degrees (demeaned)')
+        ax.grid(True)
+        ax.legend()
+        fig.tight_layout()
+        filename = f'grandavg_movement-{movement_type}_cond-{cond_name}_roll_pitch_yaw.png'
+        fig.savefig(os.path.join(save_dir, filename))
+        plt.close(fig)
+
+        # --- Plot dS, dL, dP ---
+        fig, ax = plt.subplots(figsize=(10, 6))
+        for j, column in enumerate(headers[3:]):
+            ax.errorbar(time_window, mean_erp[:, j + 3], yerr=sem_erp[:, j + 3], label=column, capsize=2)
+        ax.set_title(f'Grand Avg ERP (dS, dL, dP)\ncond-{cond_name}, movement-{movement_type}')
+        ax.set_xlabel('Time (seconds)')
+        ax.set_ylabel('Millimeters (demeaned)')
+        ax.grid(True)
+        ax.legend()
+        fig.tight_layout()
+        filename = f'grandavg_movement-{movement_type}_cond-{cond_name}_dS_dL_dP.png'
+        fig.savefig(os.path.join(save_dir, filename))
+        plt.close(fig)
+
+# Define where to save the grand average plots
+grand_avg_save_dir = deriv_fldr / 'ERP-like_plots' / 'grand_averages'
+plot_grand_average_erp(erp_by_cond_and_movement, time_window_corrected, df.columns, grand_avg_save_dir)
