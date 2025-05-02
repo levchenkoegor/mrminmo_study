@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
+from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu, gaussian_kde
 from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
 import numpy as np
@@ -27,18 +27,36 @@ for metric in metrics_to_analyze:
     nominmo_data = df_mot_metrics[(df_mot_metrics['condition'] == 'NoMinMo') & (df_mot_metrics['metric'] == metric)]
     minmo_data = df_mot_metrics[(df_mot_metrics['condition'] == 'MinMo') & (df_mot_metrics['metric'] == metric)]
 
-    nominmo_series = np.concatenate(nominmo_data['trial'].apply(eval).values)
-    minmo_series = np.concatenate(minmo_data['trial'].apply(eval).values)
+    # Convert stringified lists into actual arrays and concatenate
+    nominmo_series = np.concatenate(nominmo_data['trial'].apply(eval).to_list())
+    minmo_series = np.concatenate(minmo_data['trial'].apply(eval).to_list())
+
+    # Apply absolute value to specific metrics
+    if metric in ['dL', 'dP', 'dS', 'roll', 'pitch', 'yaw']:
+        nominmo_series = np.abs(nominmo_series)
+        minmo_series = np.abs(minmo_series)
+
+    # Shared binning
+    combined_series = np.concatenate([nominmo_series, minmo_series])
+    bin_edges = np.arange(combined_series.min(), combined_series.max() + 0.1, 0.1)
 
     # Plot histograms
     plt.figure(figsize=(10, 6))
-    plt.hist(nominmo_series, bins=60, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
-    plt.hist(minmo_series, bins=60, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
+    plt.hist(nominmo_series, bins=bin_edges, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
+    plt.hist(minmo_series, bins=bin_edges, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
     plt.title(f'Distribution of {metric}')
     plt.xlabel(metric)
     plt.ylabel('Count')
     plt.legend()
     plt.grid(True)
+
+    # KDE smoothing
+    kde_nominmo = gaussian_kde(nominmo_series)
+    kde_minmo = gaussian_kde(minmo_series)
+
+    x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
+    plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * (bin_edges[1] - bin_edges[0]), color='blue', lw=2)
+    plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
 
     # Save the plot
     plot_output_path = deriv_fldr / f'plots_movies/distribution_{metric}_nominmo_vs_minmo.png'
