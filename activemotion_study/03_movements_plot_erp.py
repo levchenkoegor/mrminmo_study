@@ -201,7 +201,7 @@ for subj_id in subjects:
             time_window_corrected = np.linspace(-pre_onset_duration, post_onset_duration, window_size)
 
             # Plot each trial separately and save the plots
-            #plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, Path(deriv_fldr / 'ERP-like_plots' / subj_id))
+            plot_each_trial_and_save(erp_data_corrected, time_window_corrected, df.columns, movement_type, cond_name, subj_id, Path(deriv_fldr / 'ERP-like_plots' / subj_id))
 
 # Plot grand average ERP across subjects (with trial-wise demeaning)
 def plot_grand_average_erp(erp_dict, time_window, headers, save_dir):
