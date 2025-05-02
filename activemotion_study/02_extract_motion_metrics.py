@@ -39,7 +39,7 @@ def adjust_timing_for_global(onset_times, run_lengths, sampling_interval=0.8):
 
 # Function to extract trials and averages for a metric
 def get_post_onset_metrics(motion_data, onset_times, col_idx, sampling_interval=0.8, post_onset_duration=5):
-    trials, averages = [], []
+    trials, averages, averages_abs = [], [], []
     post_onset_duration_idx = int(post_onset_duration / sampling_interval)
 
     for onset in onset_times:
@@ -47,10 +47,12 @@ def get_post_onset_metrics(motion_data, onset_times, col_idx, sampling_interval=
         end_idx = onset_idx + post_onset_duration_idx
         trial = motion_data[onset_idx:end_idx, col_idx]
         avg = np.mean(trial)
+        avg_abs = np.mean(np.abs(trial))
         trials.append(trial)
         averages.append(avg)
+        averages_abs.append(avg_abs)
 
-    return trials, averages
+    return trials, averages, averages_abs
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
@@ -124,8 +126,8 @@ for subj_id in subjects:
                     # Extract six motion parameters
                     motion_params = ["roll", "pitch", "yaw", "dS", "dL", "dP"]
                     for col_idx, param in enumerate(motion_params):
-                        trials, averages = get_post_onset_metrics(motion_data, onset_times, col_idx)
-                        for trial, avg in zip(trials, averages):
+                        trials, averages, averages_abs = get_post_onset_metrics(motion_data, onset_times, col_idx)
+                        for trial, avg, avg_abs in zip(trials, averages, averages_abs):
                             results.append({
                                 "subject": subj_id,
                                 "condition": cond_name,
@@ -134,13 +136,14 @@ for subj_id in subjects:
                                 "trial": trial.tolist(),
                                 "N": len(trial),
                                 "avg": avg,
+                                "avg_abs": avg_abs,
                                 "med": np.median(trial),
                                 "max": np.max(trial),
                                 "min": np.min(trial)
                             })
                 else:
-                    trials, averages = get_post_onset_metrics(motion_data, onset_times, col_idx=0)
-                    for trial, avg in zip(trials, averages):
+                    trials, averages, averages_abs = get_post_onset_metrics(motion_data, onset_times, col_idx=0)
+                    for trial, avg, avg_abs in zip(trials, averages, averages_abs):
                         results.append({
                             "subject": subj_id,
                             "condition": cond_name,
@@ -149,6 +152,7 @@ for subj_id in subjects:
                             "trial": trial.tolist(),
                             "N": len(trial),
                             "avg": avg,
+                            "avg_abs": avg_abs,
                             "med": np.median(trial),
                             "max": np.max(trial),
                             "min": np.min(trial)
