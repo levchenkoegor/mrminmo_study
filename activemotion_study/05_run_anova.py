@@ -27,7 +27,7 @@ movement_mapping = {
     'cough': 'cough'
 }
 
-for metric in ['enorm', 'mm', 'mm_delt', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
+for metric in ['enorm', 'mm', 'mm_delt', 'outliers', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
     # Subset and process the data
     df_metric = df[df['metric'] == metric].copy()
     df_metric['movement_type'] = df_metric['movement'].replace(movement_mapping)
