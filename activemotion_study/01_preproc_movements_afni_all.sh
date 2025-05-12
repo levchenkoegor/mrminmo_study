@@ -220,23 +220,31 @@ for subject_dir in "${subjects_sequence[@]}"; do
                 slice_1D_file "$stim_folder/condition-scratchleftcheek_run-all.1D" "$scratchleftcheek_temp_file" current_excel_states_sequence[@] 3
                 slice_1D_file "$stim_folder/condition-scratchrightcheek_run-all.1D" "$scratchrightcheek_temp_file" current_excel_states_sequence[@] 3
             elif [ "$cond_i" -eq 1 ] && [ "$dummydata" -eq 1 ]; then
-                # make dummy data in orig
+              if [ "$task" = "mvts" ]; then
+                # make dummy data in orig (movements)
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_stationary_dummy_1.nii
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_stationary_dummy_2.nii
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_stationary_dummy_3.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_stationary_dummy_1.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_stationary_dummy_2.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_stationary_dummy_3.nii
-
                 # make dummy data with 0.8s TR
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_stationary_dummy_1.nii
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_stationary_dummy_2.nii
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_stationary_dummy_3.nii
 
+              elif [ "$task" = "movies" ]; then
+                # make dummy data in orig (movies)
+                3drefit -space ORIG "$data_folder"/"$subject_id"/task-film_stationary_dummy_1.nii.gz
+                3drefit -view orig "$data_folder"/"$subject_id"/task-film_stationary_dummy_1.nii.gz
+                # make dummy data with 0.8s TR
+                3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-film_stationary_dummy_1.nii.gz
+              fi
+
                 export run1=1
                 export run2=2
                 export run3=3
-                #export movie=24
+                export movie=1
                 export phasereverse=7
                 export mprage=2
 
@@ -252,23 +260,31 @@ for subject_dir in "${subjects_sequence[@]}"; do
                 slice_1D_file "$stim_folder/condition-scratchleftcheek_run-all.1D" "$scratchleftcheek_temp_file" current_excel_states_sequence[@] 0
                 slice_1D_file "$stim_folder/condition-scratchrightcheek_run-all.1D" "$scratchrightcheek_temp_file" current_excel_states_sequence[@] 0
             elif [ "$cond_i" -eq 2 ] && [ "$dummydata" -eq 1 ]; then
-                # make dummy data in orig
+              if [ "$task" = "mvts" ]; then
+                # make dummy data in orig (movements)
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_moving_dummy_4.nii
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_moving_dummy_5.nii
                 3drefit -space ORIG "$data_folder"/"$subject_id"/task-movt_moving_dummy_6.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_moving_dummy_4.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_moving_dummy_5.nii
                 3drefit -view orig "$data_folder"/"$subject_id"/task-movt_moving_dummy_6.nii
-
                 # make dummy data with 0.8s TR
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_moving_dummy_4.nii
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_moving_dummy_5.nii
                 3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-movt_moving_dummy_6.nii
 
+              elif [ "$task" = "movies" ]; then
+                # make dummy data in orig (movies)
+                3drefit -space ORIG "$data_folder"/"$subject_id"/task-film_moving_dummy_2.nii.gz
+                3drefit -view orig "$data_folder"/"$subject_id"/task-film_moving_dummy_2.nii.gz
+                # make dummy data with 0.8s TR
+                3drefit -TR 0.8 "$data_folder"/"$subject_id"/task-film_moving_dummy_2.nii
+              fi
+
                 export run1=4
                 export run2=5
                 export run3=6
-                #export movie=24
+                export movie=2
                 export phasereverse=7
                 export mprage=2
 
