@@ -25,7 +25,13 @@ deriv_fldr = Path(root_fldr / 'derivatives')
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
 sequence_df = pd.read_csv(sequence_file)
 
-subjects = sequence_df[sequence_df['Subj #'] != 'dummydata_nii']['Subj #']
+dummydata = 1
+
+# Exclude dummy data
+if dummydata == 1:
+    subjects = sequence_df[sequence_df['Subj #'] == 'dummydata_nii']['Subj #']
+else:
+    subjects = sequence_df[sequence_df['Subj #'] != 'dummydata_nii']['Subj #']
 
 # Results list
 results = []
@@ -85,5 +91,10 @@ for subj_id in subjects:
 # Save to CSV
 df = pd.DataFrame(results)
 (deriv_fldr / 'group_analysis').mkdir(parents=True, exist_ok=True)
-df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_movies.csv", index=False)
-print("Metrics saved to df_motion_metrics_movies.csv")
+
+if dummydata == 1:
+    df.to_csv(deriv_fldr / 'group_analysis'/ "df_motion_metrics_movies_dummydata.csv", index=False)
+    print("Metrics saved to df_motion_metrics_movies_dummydata.csv")
+else:
+    df.to_csv(deriv_fldr / 'group_analysis' / "df_motion_metrics_movies.csv", index=False)
+    print("Metrics saved to df_motion_metrics_movies.csv")

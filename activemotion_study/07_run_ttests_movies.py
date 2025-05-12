@@ -9,8 +9,13 @@ import numpy as np
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives' / 'group_analysis')
 
+dummydata = 0
+
 # Read movie-watching data
-df_mot_metrics = pd.read_csv(deriv_fldr / 'df_motion_metrics_movies.csv')
+if dummydata == 1:
+    df_mot_metrics = pd.read_csv(deriv_fldr / 'df_motion_metrics_movies_dummydata.csv')
+else:
+    df_mot_metrics = pd.read_csv(deriv_fldr / 'df_motion_metrics_movies.csv')
 
 # Metrics to analyze
 metrics_to_analyze = ['mm', 'mm_delt', 'enorm', 'outliers', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
@@ -50,7 +55,7 @@ for metric in metrics_to_analyze:
     plt.legend()
     plt.grid(True)
 
-    # KDE smoothing
+    # KDE smoothing (skip smoothing for dummydata)
     kde_nominmo = gaussian_kde(nominmo_series)
     kde_minmo = gaussian_kde(minmo_series)
 
@@ -59,7 +64,10 @@ for metric in metrics_to_analyze:
     plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
 
     # Save the plot
-    plot_output_path = deriv_fldr / f'plots_movies/distribution_{metric}_nominmo_vs_minmo.png'
+    if dummydata == 1:
+        plot_output_path = deriv_fldr / f'plots_movies_dummydata/distribution_{metric}_nominmo_vs_minmo.png'
+    else:
+        plot_output_path = deriv_fldr / f'plots_movies/distribution_{metric}_nominmo_vs_minmo.png'
     plot_output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -114,6 +122,10 @@ for i, corrected_p in enumerate(corrected_p_values):
 
 # Convert results to a DataFrame and save as CSV
 df_results = pd.DataFrame(descriptive_results).round(4)
-df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_with_fdr.csv", index=False)
+
+if dummydata == 1:
+    df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_dummydata_with_fdr.csv", index=False)
+else:
+    df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_with_fdr.csv", index=False)
 
 print("Descriptive statistics and FDR-corrected test results saved to descriptive_statistics_movies_with_fdr.csv")
