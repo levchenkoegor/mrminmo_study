@@ -42,8 +42,14 @@ for metric in metrics_to_analyze:
         # Shared binning
         combined_series = pd.concat([nominmo_series, minmo_series])
         bin_edges = np.arange(combined_series.min(), combined_series.max() + 0.1, 0.1)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        bar_width = (bin_edges[1] - bin_edges[0]) * 0.4
 
-        # Plot histograms
+        # Compute histogram counts
+        nominmo_counts, _ = np.histogram(nominmo_series, bins=bin_edges)
+        minmo_counts, _ = np.histogram(minmo_series, bins=bin_edges)
+
+        # --------- Save Overlapped Histogram ---------
         plt.figure(figsize=(10, 6))
         plt.hist(nominmo_series, bins=bin_edges, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
         plt.hist(minmo_series, bins=bin_edges, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
@@ -62,46 +68,42 @@ for metric in metrics_to_analyze:
         # KDE smoothing
         kde_nominmo = gaussian_kde(nominmo_series)
         kde_minmo = gaussian_kde(minmo_series)
-
         x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
-        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * (bin_edges[1] - bin_edges[0]), color='blue', lw=2)
-        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
+        bin_width = bin_edges[1] - bin_edges[0]
+        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2)
+        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2)
 
         # Save the plot
         plot_output_path = deriv_fldr / f'plots_movements/distribution_{metric}_{statistic}_nominmo_vs_minmo.png'
         plot_output_path.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
         plt.close()
-        print(f"Plot saved to {plot_output_path}")
+        print(f"Overlapped plot saved to {plot_output_path}")
 
-        # --- Two vertically stacked subplots: NoMinMo and MinMo ---
-        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 8), sharex=True)
+        # --------- Save Grouped Histogram ---------
+        plt.figure(figsize=(10, 6))
+        plt.bar(bin_centers - bar_width / 2, nominmo_counts, width=bar_width, color='blue', label='NoMinMo', edgecolor='black')
+        plt.bar(bin_centers + bar_width / 2, minmo_counts, width=bar_width, color='orange', label='MinMo', edgecolor='black')
+        plt.title(f'Distribution of {statistic} for {metric}')
+        if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
+            plt.xlabel('Millimetres')
+        elif metric in ['roll', 'pitch', 'yaw']:
+            plt.xlabel('Degrees')
+        elif metric in ['outliers']:
+            plt.xlabel('Percentages')
+        plt.ylabel('Count')
+        plt.legend()
+        plt.grid(True)
 
-        # Plot NoMinMo
-        axs[0].hist(nominmo_series, bins=bin_edges, alpha=0.6, color='blue', edgecolor='black')
-        axs[0].plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * (bin_edges[1] - bin_edges[0]), color='blue', lw=2)
-        axs[0].set_title(f'NoMinMo - {statistic} of {metric}')
-        axs[0].set_ylabel('Count')
-        axs[0].grid(True)
+        # Same KDE overlay for grouped
+        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2)
+        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2)
 
-        # Plot MinMo
-        axs[1].hist(minmo_series, bins=bin_edges, alpha=0.6, color='orange', edgecolor='black')
-        axs[1].plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
-        axs[1].set_title(f'MinMo - {statistic} of {metric}')
-        axs[1].set_xlabel(
-            'Millimetres' if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']
-            else 'Degrees' if metric in ['roll', 'pitch', 'yaw']
-            else 'Percentages'
-        )
-        axs[1].set_ylabel('Count')
-        axs[1].grid(True)
-
-        plt.tight_layout()
-        plot_output_path = deriv_fldr / f'plots_movements_subplots/distribution_{metric}_{statistic}_stacked.png'
+        plot_output_path = deriv_fldr / f'plots_movements_grouped/distribution_{metric}_{statistic}_grouped.png'
         plot_output_path.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
         plt.close()
-        print(f"Stacked subplot saved to {plot_output_path}")
+        print(f"Grouped bar plot saved to {plot_output_path}")
 
         if metric in ['enorm', 'mm_delt', 'outliers']:
             # Plot histograms
