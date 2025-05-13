@@ -25,7 +25,7 @@ deriv_fldr = Path(root_fldr / 'derivatives')
 sequence_file = Path(root_fldr / 'Sequences of conditions and runs.csv')
 sequence_df = pd.read_csv(sequence_file)
 
-dummydata = 1
+dummydata = 0
 
 # Exclude dummy data
 if dummydata == 1:
