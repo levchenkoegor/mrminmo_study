@@ -5,6 +5,7 @@ from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu
 from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
 from scipy.stats import gaussian_kde
+import matplotlib.patheffects as path_effects
 
 # Paths
 root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
@@ -70,8 +71,8 @@ for metric in metrics_to_analyze:
         kde_minmo = gaussian_kde(minmo_series)
         x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
         bin_width = bin_edges[1] - bin_edges[0]
-        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2)
-        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2)
+        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
         # Save the plot
         plot_output_path = deriv_fldr / f'plots_movements/distribution_{metric}_{statistic}_nominmo_vs_minmo.png'
@@ -96,8 +97,8 @@ for metric in metrics_to_analyze:
         plt.grid(True)
 
         # Same KDE overlay for grouped
-        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2)
-        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2)
+        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
         plot_output_path = deriv_fldr / f'plots_movements_grouped/distribution_{metric}_{statistic}_grouped.png'
         plot_output_path.parent.mkdir(parents=True, exist_ok=True)
