@@ -83,8 +83,8 @@ for metric in metrics_to_analyze:
 
         # --------- Save Grouped Histogram ---------
         plt.figure(figsize=(10, 6))
-        plt.bar(bin_centers - bar_width / 2, nominmo_counts, width=bar_width, color='blue', label='NoMinMo', edgecolor='black')
-        plt.bar(bin_centers + bar_width / 2, minmo_counts, width=bar_width, color='orange', label='MinMo', edgecolor='black')
+        plt.bar(bin_centers - bar_width / 2, nominmo_counts, width=bar_width, color='blue', label='NoMinMo')
+        plt.bar(bin_centers + bar_width / 2, minmo_counts, width=bar_width, color='orange', label='MinMo')
         plt.title(f'Distribution of {statistic} for {metric}')
         if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
             plt.xlabel('Millimetres')
@@ -97,8 +97,12 @@ for metric in metrics_to_analyze:
         plt.grid(True)
 
         # Same KDE overlay for grouped
-        plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
-        plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+        #plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * bin_width, color='blue', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+        #plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * bin_width, color='orange', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+
+        # Line connecting peaks of bars
+        plt.plot(bin_centers, nominmo_counts, color='blue', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')], label='NoMinMo')
+        plt.plot(bin_centers, minmo_counts, color='orange', lw=2, path_effects=[path_effects.withStroke(linewidth=3, foreground='black')], label='MinMo')
 
         plot_output_path = deriv_fldr / f'plots_movements_grouped/distribution_{metric}_{statistic}_grouped.png'
         plot_output_path.parent.mkdir(parents=True, exist_ok=True)
