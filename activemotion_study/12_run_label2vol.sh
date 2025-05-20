@@ -73,6 +73,9 @@ for subj in $subjects; do
                   --o $SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}_outter.nii.gz \
                   --temp $mov_file
 
+    # Symlink to vr_base.nii.gz
+    ln -sf $mov_file $SUBJECTS_DIR/${subj}/vr_base_cond-${cond}.nii.gz
+
   done
 done
 
