@@ -79,8 +79,8 @@ for subj in $subjects; do
     ## Create a mask for spurious activity (outside the brain)
     lh_outter=$SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}_outter.nii.gz
     rh_outter=$SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}_outter.nii.gz
-    brainmask=${subj_preproc_outputs}/brainmask.nii.gz
-    nonbrain_mask=${subj_preproc_outputs}/nonbrain_mask.nii.gz
+    brainmask=${subj_preproc_outputs}/brainmask_cond-${cond}.nii.gz
+    nonbrain_mask=${subj_preproc_outputs}/nonbrain_mask_cond-${cond}.nii.gz
     combined_outter_mask=${subj_preproc_outputs}/mask_outsidebrain_raw_cond-${cond}.nii.gz
     final_mask=${subj_preproc_outputs}/mask_outsidebrain_clean_cond-${cond}.nii.gz
 
@@ -97,8 +97,8 @@ for subj in $subjects; do
     3dcalc -a $combined_outter_mask -b $nonbrain_mask -expr 'a*b' -prefix $final_mask
 
     # Symlinks
-    ln -sf $brainmask $SUBJECTS_DIR/${subj}/brainmask.nii.gz
-    ln -sf $nonbrain_mask $SUBJECTS_DIR/${subj}/nonbrain_mask.nii.gz
+    ln -sf $brainmask $SUBJECTS_DIR/${subj}/brainmask_cond-${cond}.nii.gz
+    ln -sf $nonbrain_mask $SUBJECTS_DIR/${subj}/nonbrain_mask_cond-${cond}.nii.gz
     ln -sf $combined_outter_mask $SUBJECTS_DIR/${subj}/mask_outsidebrain_raw_cond-${cond}.nii.gz
     ln -sf $final_mask $SUBJECTS_DIR/${subj}/mask_outsidebrain_clean_cond-${cond}.nii.gz
 
