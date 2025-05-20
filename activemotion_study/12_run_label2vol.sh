@@ -9,7 +9,7 @@ export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivativ
 
 # Extract subject IDs dynamically
 subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
-
+subjects="sub-241031DC"
 for subj in $subjects; do
 
     # fsaverage sereno to subject-wise space (right and left hemi)
@@ -75,6 +75,32 @@ for subj in $subjects; do
 
     # Symlink to vr_base.nii.gz
     ln -sf $mov_file $SUBJECTS_DIR/${subj}/vr_base_cond-${cond}.nii.gz
+
+    ## Create a mask for spurious activity (outside the brain)
+    lh_outter=$SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}_outter.nii.gz
+    rh_outter=$SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}_outter.nii.gz
+    brainmask=${subj_preproc_outputs}/brainmask.nii.gz
+    nonbrain_mask=${subj_preproc_outputs}/nonbrain_mask.nii.gz
+    combined_outter_mask=${subj_preproc_outputs}/mask_outsidebrain_raw_cond-${cond}.nii.gz
+    final_mask=${subj_preproc_outputs}/mask_outsidebrain_clean_cond-${cond}.nii.gz
+
+    # Create EPI-based brain mask
+    3dAutomask -prefix $brainmask $mov_file
+
+    # Invert the brain mask
+    3dcalc -a $brainmask -expr 'not(a)' -prefix $nonbrain_mask
+
+    # Combine LH and RH 'outter' projection masks
+    3dcalc -a $lh_outter -b $rh_outter -expr 'max(step(a),step(b))' -prefix $combined_outter_mask
+
+    # Intersect outer projection with non-brain mask
+    3dcalc -a $combined_outter_mask -b $nonbrain_mask -expr 'a*b' -prefix $final_mask
+
+    # Symlinks
+    ln -sf $brainmask $SUBJECTS_DIR/${subj}/brainmask.nii.gz
+    ln -sf $nonbrain_mask $SUBJECTS_DIR/${subj}/nonbrain_mask.nii.gz
+    ln -sf $combined_outter_mask $SUBJECTS_DIR/${subj}/mask_outsidebrain_raw_cond-${cond}.nii.gz
+    ln -sf $final_mask $SUBJECTS_DIR/${subj}/mask_outsidebrain_clean_cond-${cond}.nii.gz
 
   done
 done
