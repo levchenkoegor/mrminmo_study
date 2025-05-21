@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 
 # Define paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = root_fldr / 'derivatives'
 group_analysis_dir = deriv_fldr / 'group_analysis'
 fig_dir_betas = group_analysis_dir / 'plots_bvalues'
