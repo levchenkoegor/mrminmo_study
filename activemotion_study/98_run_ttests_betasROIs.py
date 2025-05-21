@@ -7,15 +7,15 @@
 # for movement in movements:
 #     for roi in movement_roi_map[movement]:
 #         for hemi in hemis:
-#             minmo_betas = df_betas_rois[(df_betas_rois["condition"] == "MinMo") &
-#                                         (df_betas_rois["ROI"] == roi) &
-#                                         (df_betas_rois["movement"] == movement) &
-#                                         (df_betas_rois["hemi"] == hemi)]
+#             minmo_betas = df_b_t_values_rois[(df_b_t_values_rois["condition"] == "MinMo") &
+#                                         (df_b_t_values_rois["ROI"] == roi) &
+#                                         (df_b_t_values_rois["movement"] == movement) &
+#                                         (df_b_t_values_rois["hemi"] == hemi)]
 #
-#             nominmo_betas = df_betas_rois[(df_betas_rois["condition"] == "NoMinMo") &
-#                                           (df_betas_rois["ROI"] == roi) &
-#                                           (df_betas_rois["movement"] == movement) &
-#                                           (df_betas_rois["hemi"] == hemi)]
+#             nominmo_betas = df_b_t_values_rois[(df_b_t_values_rois["condition"] == "NoMinMo") &
+#                                           (df_b_t_values_rois["ROI"] == roi) &
+#                                           (df_b_t_values_rois["movement"] == movement) &
+#                                           (df_b_t_values_rois["hemi"] == hemi)]
 #
 #             common_subjects = set(minmo_betas["subject"]).intersection(set(nominmo_betas["subject"]))
 #             minmo_betas = minmo_betas[minmo_betas["subject"].isin(common_subjects)].sort_values("subject")
@@ -67,13 +67,13 @@
 # plot_dir.mkdir(parents=True, exist_ok=True)
 #
 # # Iterate over combinations of movement, ROI, and hemisphere
-# for movement in df_betas_rois['movement'].unique():
-#     for roi in df_betas_rois['ROI'].unique():
-#         for hemi in df_betas_rois['hemi'].unique():
-#             df_plot = df_betas_rois[
-#                 (df_betas_rois['movement'] == movement) &
-#                 (df_betas_rois['ROI'] == roi) &
-#                 (df_betas_rois['hemi'] == hemi)
+# for movement in df_b_t_values_rois['movement'].unique():
+#     for roi in df_b_t_values_rois['ROI'].unique():
+#         for hemi in df_b_t_values_rois['hemi'].unique():
+#             df_plot = df_b_t_values_rois[
+#                 (df_b_t_values_rois['movement'] == movement) &
+#                 (df_b_t_values_rois['ROI'] == roi) &
+#                 (df_b_t_values_rois['hemi'] == hemi)
 #             ]
 #             if df_plot.empty:
 #                 continue
