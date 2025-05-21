@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = root_fldr / 'derivatives'
 group_analysis_dir = deriv_fldr / 'group_analysis'
 group_analysis_dir.mkdir(exist_ok=True)
@@ -21,7 +21,7 @@ hemis = ["lh", "rh"]
 subjects = sorted([folder.name for folder in deriv_fldr.iterdir()
             if folder.is_dir() and folder.name.startswith("sub-")
             and folder.name.endswith("_nii") and folder.name != "sub-dummydata_nii"])
-
+subjects = ["sub-241031DC_nii"]
 # Load ROI labels
 roi_labels = pd.read_csv(root_fldr / "labels_csurfmaps.csv")
 rois = ['3b_face', '3b_hand', '3b_foot', '3a_face', '3a_hand', '3a_foot',
@@ -103,4 +103,48 @@ for subject in subjects:
 # Save results
 output_fname = 'df_b_t_values_selectedROIs.csv'
 df_b_t_values_rois.to_csv(group_analysis_dir / output_fname, index=False)
+print(f'The file {output_fname} was saved')
+
+
+### OUTSIDE OF THE BRAIN:
+subjects = ["sub-241031DC_nii"]
+# Initialize output
+df_outer = pd.DataFrame()
+
+for subject in subjects:
+    print(f'{subject} processing...')
+    for cond in conditions:
+        stats_file = deriv_fldr / subject / f"{subject}_task-mvts_cond-{cond}" / \
+                     f"{subject}_task-mvts_cond-{cond}.results" / f"roistats_cond-{cond}_outter.csv"
+
+        if not stats_file.exists():
+            print(f"Missing file: {stats_file}")
+            continue
+
+        roistats = pd.read_csv(stats_file, delimiter="\t")
+        roistats.columns = roistats.columns.str.strip()
+
+        for movement in movements:
+            beta_row = roistats[roistats['Sub-brick'].str.contains(fr"{movement}.*Coef", regex=True, na=False)]
+            t_row = roistats[roistats['Sub-brick'].str.contains(fr"{movement}.*Tstat", regex=True, na=False)]
+
+            if not beta_row.empty:
+                beta_value = beta_row["Mean_1"].values[0]
+                t_value = t_row["Mean_1"].values[0] if not t_row.empty else None
+
+                df_outer = pd.concat([
+                    df_outer,
+                    pd.DataFrame([{
+                        "subject": subject,
+                        "condition": cond,
+                        "movement": movement,
+                        "ROI": "outside_brain",
+                        "beta_coef": beta_value,
+                        "t_value": t_value
+                    }])
+                ], ignore_index=True)
+
+# Save results
+output_fname = 'df_b_t_values_outsidebrain.csv'
+df_outer.to_csv(group_analysis_dir / output_fname, index=False)
 print(f'The file {output_fname} was saved')
