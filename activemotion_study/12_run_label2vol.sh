@@ -4,8 +4,8 @@
 export FREESURFER_HOME=/tools/freesurfer
 source $FREESURFER_HOME/SetUpFreeSurfer.sh
 
-export SUBJECTS_DIR=/data/elevchenko/MinMo_movements/activemotion_study/derivatives/freesurfer
-export data_folder=/data/elevchenko/MinMo_movements/activemotion_study/derivatives
+export SUBJECTS_DIR=/egor2/egor/MinMo_movements/activemotion_study/derivatives/freesurfer
+export data_folder=/egor2/egor/MinMo_movements/activemotion_study/derivatives
 
 # Extract subject IDs dynamically
 subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
@@ -85,16 +85,16 @@ for subj in $subjects; do
     final_mask=${subj_preproc_outputs}/mask_outsidebrain_clean_cond-${cond}.nii.gz
 
     # Create EPI-based brain mask
-    3dAutomask -prefix $brainmask $mov_file
+    3dAutomask -prefix $brainmask $mov_file -overwrite
 
     # Invert the brain mask
-    3dcalc -a $brainmask -expr 'not(a)' -prefix $nonbrain_mask
+    3dcalc -a $brainmask -expr 'not(a)' -prefix $nonbrain_mask -overwrite
 
     # Combine LH and RH 'outter' projection masks
-    3dcalc -a $lh_outter -b $rh_outter -expr 'max(step(a),step(b))' -prefix $combined_outter_mask
+    3dcalc -a $lh_outter -b $rh_outter -expr 'max(step(a),step(b))' -prefix $combined_outter_mask -overwrite
 
     # Intersect outer projection with non-brain mask
-    3dcalc -a $combined_outter_mask -b $nonbrain_mask -expr 'a*b' -prefix $final_mask
+    3dcalc -a $combined_outter_mask -b $nonbrain_mask -expr 'a*b' -prefix $final_mask -overwrite
 
     # Symlinks
     ln -sf $brainmask $SUBJECTS_DIR/${subj}/brainmask_cond-${cond}.nii.gz
