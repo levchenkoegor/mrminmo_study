@@ -9,7 +9,7 @@ export data_folder=/egor2/egor/MinMo_movements/activemotion_study/derivatives
 
 # Extract subject IDs dynamically
 subjects=$(ls $SUBJECTS_DIR | grep -oP '^sub-24\d{4}[A-Z]{2}')
-subjects="sub-241031DC"
+
 for subj in $subjects; do
   echo "Processing subject: $subj"
 
@@ -43,20 +43,6 @@ for subj in $subjects; do
     roi_mask=$SUBJECTS_DIR/${subj}/mask_outsidebrain_clean_cond-${cond}.nii.gz
 
     3dROIstats -mask $roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_cond-${cond}_outter.csv
-
-
-#    lh_roi_mask=$SUBJECTS_DIR/${subj}/lh.aparc_epi_cond-${cond}_outter.nii.gz
-#    rh_roi_mask=$SUBJECTS_DIR/${subj}/rh.aparc_epi_cond-${cond}_outter.nii.gz
-#
-#    # Extract ROI statistics for left hemisphere
-#    3dROIstats -mask $lh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_lh_cond-${cond}_outter.csv
-#    3dmaskdump -mask $lh_roi_mask $stats_file > ${subj_preproc_outputs}/voxels_masked_lh_cond-${cond}_outter.csv
-#    3dmaskdump -xyz -nozero -mask $lh_roi_mask $lh_roi_mask > ${subj_preproc_outputs}/voxels_labels_lh_cond-${cond}_outter.csv
-#
-#    # Extract ROI statistics for right hemisphere
-#    3dROIstats -mask $rh_roi_mask -longnames $stats_file > ${subj_preproc_outputs}/roistats_rh_cond-${cond}_outter.csv
-#    3dmaskdump -mask $rh_roi_mask $stats_file > ${subj_preproc_outputs}/voxels_masked_rh_cond-${cond}_outter.csv
-#    3dmaskdump -xyz -nozero -mask $rh_roi_mask $rh_roi_mask > ${subj_preproc_outputs}/voxels_labels_rh_cond-${cond}_outter.csv
 
   done
 done
