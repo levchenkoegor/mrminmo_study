@@ -9,7 +9,7 @@ export data_folder=/egor2/egor/MinMo_movements/activemotion_study/derivatives
 
 # Extract subject IDs dynamically
 subjects=$(ls $data_folder | grep -oP '^sub-24\d{4}[A-Z]{2}')
-subjects="sub-241031DC"
+
 for subj in $subjects; do
 
     # fsaverage sereno to subject-wise space (right and left hemi)
