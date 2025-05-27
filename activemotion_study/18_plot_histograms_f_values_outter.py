@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import matplotlib.patheffects as path_effects
 from pathlib import Path
@@ -7,8 +8,11 @@ from pathlib import Path
 # Define paths
 root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = root_fldr / 'derivatives' / 'group_analysis'
-fig_dir = deriv_fldr / 'plots_fvalues_grouped'
-fig_dir.mkdir(parents=True, exist_ok=True)
+fig_dir_grouped = deriv_fldr / 'plots_fvalues_grouped'
+fig_dir_violin = deriv_fldr / 'plots_f_values_violins'
+
+fig_dir_grouped.mkdir(parents=True, exist_ok=True)
+fig_dir_violin.mkdir(parents=True, exist_ok=True)
 
 # Load data
 df = pd.read_csv(deriv_fldr / 'df_f_values_outsidebrain.csv')
@@ -38,22 +42,32 @@ for movement in sorted(df["movement"].unique()):
     plt.bar(bin_centers - bar_width / 2, counts_nominmo, width=bar_width, color='blue', label='NoMinMo')
     plt.bar(bin_centers + bar_width / 2, counts_minmo, width=bar_width, color='orange', label='MinMo')
 
-    # Optional lines connecting tops of bars
     plt.plot(bin_centers, counts_nominmo, color='blue', lw=2,
              path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
     plt.plot(bin_centers, counts_minmo, color='orange', lw=2,
              path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
-    # Labels and formatting
     plt.title(f'Distribution of F-values for {movement}')
     plt.xlabel('F-statistic')
     plt.ylabel('Count')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-
-    # Save figure
-    fig_path = fig_dir / f'grouped_fstats_{movement}.png'
-    plt.savefig(fig_path, dpi=300, bbox_inches='tight')
+    plt.savefig(fig_dir_grouped / f'grouped_fstats_{movement}.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"Saved: {fig_path}")
+    print(f"Saved grouped bar plot: {fig_dir_grouped / f'grouped_fstats_{movement}.png'}")
+
+    # Violin + strip plot
+    subset = df[df["movement"] == movement]
+    plt.figure(figsize=(8, 6))
+    sns.violinplot(data=subset, x="condition", y="f_value", palette=["blue", "orange"], inner=None)
+    sns.stripplot(data=subset, x="condition", y="f_value", color="black", alpha=0.6, jitter=0.1)
+
+    plt.title(f"F-Value Distribution: {movement}")
+    plt.ylabel("F-statistic")
+    plt.xlabel("")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(fig_dir_violin / f"violin_fstats_{movement}.png", dpi=300)
+    plt.close()
+    print(f"Saved violin plot: {fig_dir_violin / f'violin_fstats_{movement}.png'}")
