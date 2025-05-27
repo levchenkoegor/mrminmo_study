@@ -9,10 +9,10 @@ for base_dir in base_dirs:
     print(f"\nProcessing dataset: {base_dir}")
     base_path = Path(base_dir)
 
-    for subject in ["01", "1"]: #os.listdir(base_path):
+    for subject in sorted(os.listdir(base_path)):
 
-        print(f"Subject: {subject}")
-        results_path = base_path / f"sub-{subject}" / f"sub-{subject}.results"
+        print(f"Subject: {subject} from {base_dir}")
+        results_path = base_path / f"{subject}" / f"{subject}.results"
         if not results_path.exists():
             print(f"No results ({results_path}) folder for {subject}")
             continue
