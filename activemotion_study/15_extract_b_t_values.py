@@ -21,7 +21,7 @@ hemis = ["lh", "rh"]
 subjects = sorted([folder.name for folder in deriv_fldr.iterdir()
             if folder.is_dir() and folder.name.startswith("sub-")
             and folder.name.endswith("_nii") and folder.name != "sub-dummydata_nii"])
-subjects = ["sub-241031DC_nii"]
+
 # Load ROI labels
 roi_labels = pd.read_csv(root_fldr / "labels_csurfmaps.csv")
 rois = ['3b_face', '3b_hand', '3b_foot', '3a_face', '3a_hand', '3a_foot',
