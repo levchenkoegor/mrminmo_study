@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from collections import defaultdict
@@ -16,11 +17,24 @@ grouped_dir.mkdir(parents=True, exist_ok=True)
 normalised_dir.mkdir(parents=True, exist_ok=True)
 
 datasets = {
-    'BTF': Path('derivatives_btf'),
-    'NNDB': Path('derivatives_nndb')
+    'Movie I': Path('derivatives_nndb'),
+    'Movie II': Path('derivatives_btf')
 }
 motion_param_labels = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
-bad_subjects_btf = ['03', '07', '24', '37', '39', '43']
+bad_subjects_movie2 = ['03', '07', '24', '37', '39', '43']  # based on the notes from the operator
+
+# Load run length data and filter NNDB runs with >= 600 TRs
+run_info = pd.read_csv('run_lengths.csv')
+valid_nndb_runs = run_info[(run_info['dataset'] == 'NNdb') & (run_info['n_trs'] >= 600)]
+
+# Convert to a dict: subject_id -> list of valid run indices (1-based)
+valid_run_indices = defaultdict(list)
+valid_run_lengths = defaultdict(list)
+for _, row in valid_nndb_runs.iterrows():
+    subj = str(row['subject']).zfill(2)
+    valid_run_indices[subj].append(int(row['run_i']))
+    valid_run_lengths[subj].append(int(row['n_trs']))
+
 
 # ------------------- Data Collection ------------------- #
 displacement = defaultdict(list)
@@ -29,17 +43,25 @@ motion_params = defaultdict(lambda: defaultdict(list))  # dataset -> param -> li
 
 for label, base_path in datasets.items():
     for subject in sorted(base_path.iterdir()):
-        subj_id = subject.name.replace('sub-', '')  # Extract just the number part
-        if label == 'BTF' and subj_id in bad_subjects_btf:
-            print(f"Skipping bad BTF subject: {subject.name}")
+        subj_id = subject.name.replace('sub-', '').zfill(2)
+        if label == 'Movie II' and subj_id in bad_subjects_movie2:
+            print(f"Skipping bad MovieProject2 subject: {subject.name}")
             continue
 
         results_path = subject / f"{subject.name}.results"
         if not results_path.exists():
             continue
 
+        if label == 'Movie I':
+            if subj_id not in valid_run_indices:
+                print(f"Skipping subject with no valid runs: sub-{subj_id}")
+                continue
+
         # Max displacement
-        for file in results_path.glob('mm.r0*_norm'):
+        for file in sorted(results_path.glob('mm.r0[0-9]_norm')):
+            run_num = int(file.name.split('.')[1][1:3])
+            if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
+                continue
             if '_delt' in file.name or '_norm_norm' in file.name:
                 continue
             try:
@@ -50,6 +72,9 @@ for label, base_path in datasets.items():
 
         # Delta displacement
         for file in results_path.glob('mm.r0*_delt'):
+            run_num = int(file.name.split('.')[1][1:3])
+            if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
+                continue
             if '_norm' in file.name:
                 continue
             try:
@@ -63,10 +88,38 @@ for label, base_path in datasets.items():
         if dfile.exists():
             try:
                 data = np.loadtxt(dfile, comments='#')
+
+                if label == 'Movie I':
+                    # Get all run lengths (valid and invalid) for this subject
+                    all_runs = run_info[
+                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
+
+                    valid_runs = valid_run_indices[subj_id]
+                    valid_tr_slices = []
+                    tr_start = 0
+
+                    for _, row in all_runs.iterrows():
+                        tr_count = int(row['n_trs'])
+                        run_i = int(row['run_i'])
+
+                        if run_i in valid_runs:
+                            valid_tr_slices.append((tr_start, tr_start + tr_count))
+                        else:
+                            print(f"Skipping sub-{subj_id} run-{str(run_i).zfill(2)} with {tr_count} TRs")
+
+                        tr_start += tr_count
+
+                    # Concatenate only the TRs from valid runs
+                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
+                else:
+                    valid_data = data
+
                 for i, param in enumerate(motion_param_labels):
-                    motion_params[label][param].extend(np.abs(data[:, i]))
+                    motion_params[label][param].extend(np.abs(valid_data[:, i]))
+
             except Exception as e:
                 print(f"Could not load {dfile}: {e}")
+
 
 # ------------------- Plotting Function ------------------- #
 def plot_distributions(param_name, values_dict, unit_label, overlap_path, grouped_path):
