@@ -4,9 +4,10 @@ from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu, gaussian_kde
 from statsmodels.stats.multitest import fdrcorrection
 from pathlib import Path
 import numpy as np
+import matplotlib.patheffects as path_effects
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives' / 'group_analysis')
 
 dummydata = 0
@@ -43,35 +44,55 @@ for metric in metrics_to_analyze:
 
     # Shared binning
     combined_series = np.concatenate([nominmo_series, minmo_series])
-    bin_edges = np.arange(combined_series.min(), combined_series.max() + 0.1, 0.1)
+    bin_width = 0.1
+    bin_edges = np.arange(combined_series.min(), combined_series.max() + bin_width, bin_width)
+    bin_centers = bin_edges[:-1] + bin_width / 2
 
-    # Plot histograms
-    plt.figure(figsize=(10, 6))
-    plt.hist(nominmo_series, bins=bin_edges, alpha=0.6, color='blue', label='NoMinMo', edgecolor='black')
-    plt.hist(minmo_series, bins=bin_edges, alpha=0.6, color='orange', label='MinMo', edgecolor='black')
-    plt.title(f'Distribution of {metric}')
-    plt.xlabel(metric)
-    plt.ylabel('Count')
-    plt.legend()
-    plt.grid(True)
+    # Histogram counts
+    nominmo_counts, _ = np.histogram(nominmo_series, bins=bin_edges)
+    minmo_counts, _ = np.histogram(minmo_series, bins=bin_edges)
 
-    # KDE smoothing (skip smoothing for dummydata)
+    # KDE (optional, not plotted here)
     kde_nominmo = gaussian_kde(nominmo_series)
     kde_minmo = gaussian_kde(minmo_series)
-
     x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
-    plt.plot(x_vals, kde_nominmo(x_vals) * len(nominmo_series) * (bin_edges[1] - bin_edges[0]), color='blue', lw=2)
-    plt.plot(x_vals, kde_minmo(x_vals) * len(minmo_series) * (bin_edges[1] - bin_edges[0]), color='orange', lw=2)
 
-    # Save the plot
-    if dummydata == 1:
-        plot_output_path = deriv_fldr / f'plots_movies_dummydata/distribution_{metric}_nominmo_vs_minmo.png'
+    # --------- Save Grouped Histogram ---------
+    plt.figure(figsize=(10, 6))
+    bar_width = bin_width * 0.45
+    plt.bar(bin_centers - bar_width / 2, nominmo_counts, width=bar_width, color='blue', label='NoMinMo')
+    plt.bar(bin_centers + bar_width / 2, minmo_counts, width=bar_width, color='orange', label='MinMo')
+
+    # Axis labels based on metric type
+    if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
+        plt.xlabel('Millimetres')
+    elif metric in ['roll', 'pitch', 'yaw']:
+        plt.xlabel('Degrees')
+    elif metric == 'outliers':
+        plt.xlabel('Percentages')
     else:
-        plot_output_path = deriv_fldr / f'plots_movies/distribution_{metric}_nominmo_vs_minmo.png'
-    plot_output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(plot_output_path, dpi=300, bbox_inches='tight')
+        plt.xlabel(metric)
+
+    plt.ylabel('Count')
+    plt.title(f'Distribution of {metric}')
+    plt.grid(True)
+    plt.legend()
+
+    # Line connecting peaks of bars
+    plt.plot(bin_centers, nominmo_counts, color='blue', lw=2,
+             path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+    plt.plot(bin_centers, minmo_counts, color='orange', lw=2,
+             path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
+
+    # Save the grouped plot
+    if dummydata == 1:
+        plot_grouped_path = deriv_fldr / f'plots_movies_dummydata_grouped/distribution_{metric}_grouped.png'
+    else:
+        plot_grouped_path = deriv_fldr / f'plots_movies_grouped/distribution_{metric}_grouped.png'
+    plot_grouped_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(plot_grouped_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"Plot saved to {plot_output_path}")
+    print(f"Grouped bar plot saved to {plot_grouped_path}")
 
     # Normality test (Shapiro-Wilk)
     shapiro_nominmo = shapiro(nominmo_series)
@@ -128,4 +149,4 @@ if dummydata == 1:
 else:
     df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_with_fdr.csv", index=False)
 
-print("Descriptive statistics and FDR-corrected test results saved to descriptive_statistics_movies_with_fdr.csv")
+print("Descriptive statistics and FDR-corrected test results saved.")
