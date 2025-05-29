@@ -20,6 +20,7 @@ datasets = {
     'NNDB': Path('derivatives_nndb')
 }
 motion_param_labels = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
+bad_subjects_btf = ['03', '07', '24', '37', '39', '43']
 
 # ------------------- Data Collection ------------------- #
 displacement = defaultdict(list)
@@ -27,7 +28,12 @@ displacement_delt = defaultdict(list)  # New: delta motion
 motion_params = defaultdict(lambda: defaultdict(list))  # dataset -> param -> list of values
 
 for label, base_path in datasets.items():
-    for subject in base_path.iterdir():
+    for subject in sorted(base_path.iterdir()):
+        subj_id = subject.name.replace('sub-', '')  # Extract just the number part
+        if label == 'BTF' and subj_id in bad_subjects_btf:
+            print(f"Skipping bad BTF subject: {subject.name}")
+            continue
+
         results_path = subject / f"{subject.name}.results"
         if not results_path.exists():
             continue
