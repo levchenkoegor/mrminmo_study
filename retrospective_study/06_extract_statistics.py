@@ -35,8 +35,8 @@ for label, base_path in datasets.items():
         if not results_path.exists():
             continue
 
-        # -------------------- dfile_rall_norm.1D -------------------- #
-        dfile = results_path / "dfile_rall_norm.1D"
+        # dfile_rall_norm_downsampled
+        dfile = results_path / "dfile_rall_norm_downsampled.1D"
         if dfile.exists():
             try:
                 data = np.loadtxt(dfile, comments='#')
@@ -77,14 +77,12 @@ for label, base_path in datasets.items():
             except Exception as e:
                 print(f"Error loading {dfile}: {e}")
 
-        # -------------------- mm (norm) and mm_delt -------------------- #
-        for source_type in ['norm', 'delt']:
+        # mm
+        for source_type, suffix in [('norm', 'norm_downsampled')]:
             mm_data = []
-            for file in sorted(results_path.glob(f'mm.r0[0-9]_{source_type}')):
+            for file in sorted(results_path.glob(f'mm.r0[0-9]*_{suffix}')):
                 run_num = int(file.name.split('.')[1][1:3])
                 if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
-                    continue
-                if '_norm_norm' in file.name:
                     continue
                 try:
                     data = np.loadtxt(file, skiprows=2)
@@ -102,7 +100,6 @@ for label, base_path in datasets.items():
                 except Exception as e:
                     print(f"Error reading {file}: {e}")
 
-            # Concatenate across runs and compute summary
             if mm_data:
                 mm_data = np.concatenate(mm_data)
                 records.append({
@@ -116,6 +113,6 @@ for label, base_path in datasets.items():
                     'min': round(np.min(mm_data), 4)
                 })
 
-# ----------------- Convert to DataFrame ----------------- #
+# Save to csv file
 df = pd.DataFrame(records)
 df.to_csv("group_analysis/df_motion_param_stats.csv", index=False)
