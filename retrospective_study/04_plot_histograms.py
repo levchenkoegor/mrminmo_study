@@ -8,14 +8,6 @@ import matplotlib.patheffects as path_effects
 
 
 # ------------------- Setup ------------------- #
-def downsample_data(data, dataset_label):
-    if dataset_label == 'Movie I':  # NNDb
-        return data[::3]
-    elif dataset_label == 'Movie II':  # BTF
-        return data[::2]
-    else:
-        return data
-
 output_root = Path('/egor2/egor/MinMo_movements/retrospective_study/group_analysis')
 overlap_dir = output_root / 'plots_motion_params'
 grouped_dir = output_root / 'plots_motion_params_grouped'
@@ -66,7 +58,7 @@ for label, base_path in datasets.items():
                 continue
 
         # Max displacement
-        for file in sorted(results_path.glob('mm.r0[0-9]_norm')):
+        for file in sorted(results_path.glob('mm.r0[0-9]*_norm_downsampled')):
             run_num = int(file.name.split('.')[1][1:3])
             if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
                 continue
@@ -74,7 +66,6 @@ for label, base_path in datasets.items():
                 continue
             try:
                 data = np.loadtxt(file, skiprows=2)
-                data = downsample_data(data, label)
                 displacement[label].extend(np.abs(data))
             except Exception as e:
                 print(f"Could not load {file}: {e}")
@@ -88,13 +79,12 @@ for label, base_path in datasets.items():
                 continue
             try:
                 data = np.loadtxt(file, skiprows=2)
-                # data = downsample_data(data, label) # Downsampling for delta a bit tricky to implement
                 displacement_delt[label].extend(np.abs(data))
             except Exception as e:
                 print(f"Could not load {file}: {e}")
 
         # 6 motion parameters
-        dfile = results_path / 'dfile_rall_norm.1D'
+        dfile = results_path / 'dfile_rall_norm_downsampled.1D'
         if dfile.exists():
             try:
                 data = np.loadtxt(dfile, comments='#')
@@ -121,11 +111,8 @@ for label, base_path in datasets.items():
 
                     # Concatenate only the TRs from valid runs
                     valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
-                    valid_data = downsample_data(valid_data, label)
-
                 else:
-                    #valid_data = data
-                    valid_data = downsample_data(data, label)
+                    valid_data = data
 
                 for i, param in enumerate(motion_param_labels):
                     motion_params[label][param].extend(np.abs(valid_data[:, i]))
@@ -217,8 +204,8 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
 plot_distributions('MaxDisplacement', displacement, 'Millimetres',
                    overlap_path=overlap_dir, grouped_path=grouped_dir)
 # Delta displacement
-plot_distributions('MaxDisplacement_Delta', displacement_delt, 'Millimetres',
-                   overlap_path=overlap_dir, grouped_path=grouped_dir)
+# plot_distributions('MaxDisplacement_Delta', displacement_delt, 'Millimetres',
+#                    overlap_path=overlap_dir, grouped_path=grouped_dir)
 
 # 6 motion parameters
 for param in motion_param_labels:
