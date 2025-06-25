@@ -8,6 +8,14 @@ import matplotlib.patheffects as path_effects
 
 
 # ------------------- Setup ------------------- #
+def downsample_data(data, dataset_label):
+    if dataset_label == 'Movie I':  # NNDb
+        return data[::3]
+    elif dataset_label == 'Movie II':  # BTF
+        return data[::2]
+    else:
+        return data
+
 output_root = Path('/egor2/egor/MinMo_movements/retrospective_study/group_analysis')
 overlap_dir = output_root / 'plots_motion_params'
 grouped_dir = output_root / 'plots_motion_params_grouped'
@@ -66,6 +74,7 @@ for label, base_path in datasets.items():
                 continue
             try:
                 data = np.loadtxt(file, skiprows=2)
+                data = downsample_data(data, label)
                 displacement[label].extend(np.abs(data))
             except Exception as e:
                 print(f"Could not load {file}: {e}")
@@ -79,6 +88,7 @@ for label, base_path in datasets.items():
                 continue
             try:
                 data = np.loadtxt(file, skiprows=2)
+                # data = downsample_data(data, label) # Downsampling for delta a bit tricky to implement
                 displacement_delt[label].extend(np.abs(data))
             except Exception as e:
                 print(f"Could not load {file}: {e}")
@@ -111,8 +121,11 @@ for label, base_path in datasets.items():
 
                     # Concatenate only the TRs from valid runs
                     valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
+                    valid_data = downsample_data(valid_data, label)
+
                 else:
-                    valid_data = data
+                    #valid_data = data
+                    valid_data = downsample_data(data, label)
 
                 for i, param in enumerate(motion_param_labels):
                     motion_params[label][param].extend(np.abs(valid_data[:, i]))
