@@ -2,6 +2,14 @@ import os
 import numpy as np
 from pathlib import Path
 
+# Downsample function
+def downsample_data(data, dataset_label):
+    if dataset_label == 'derivatives_nndb':  # Movie I
+        return data[::3]
+    elif dataset_label == 'derivatives_btf':  # Movie II
+        return data[::2]
+    return data
+
 # Define base folders to process
 base_dirs = ['derivatives_btf', 'derivatives_nndb']
 
@@ -10,6 +18,8 @@ for base_dir in base_dirs:
     base_path = Path(base_dir)
 
     for subject in sorted(os.listdir(base_path)):
+
+        full_tr_counts = [] # to keep track of full-resolution data (not downsampled)
 
         print(f"Subject: {subject} from {base_dir}")
         results_path = base_path / f"{subject}" / f"{subject}.results"
@@ -34,18 +44,22 @@ for base_dir in base_dirs:
                     raise ValueError(f"Expected 1 column in {mm_file.name}")
 
                 norm_data = data - data[0]
-                norm_path = mm_file.with_name(mm_file.name + '_norm')
+                norm_data = downsample_data(norm_data, base_dir)  # downsampling
+
+                norm_path = mm_file.with_name(mm_file.name + '_norm_downsampled')
                 with open(norm_path, 'w') as f:
                     f.writelines(header)
                     np.savetxt(f, norm_data, fmt='%.3f')
 
-                tr_counts.append(len(data))
+                full_tr_counts.append(len(data))  # full-resolution count
+                tr_counts.append(len(norm_data))  # downsampled count
+
                 print(f"Normalized: {mm_file.name} → {norm_path.name}")
 
             except Exception as e:
                 print(f"Error processing {mm_file.name}: {e}")
 
-        # Normalize dfile_rall.1D using inferred TR counts
+        # Normalize and downsample dfile_rall.1D using inferred TR counts
         dfile_path = results_path / 'dfile_rall.1D'
         if not dfile_path.exists():
             print(f"Missing: dfile_rall.1D")
@@ -59,14 +73,14 @@ for base_dir in base_dirs:
             if data.ndim != 2 or data.shape[1] != 6:
                 raise ValueError("Expected 6 columns in dfile_rall.1D")
 
-            if sum(tr_counts) != data.shape[0]:
-                raise ValueError(f"Mismatch: sum(TRs from mm.r0*) = {sum(tr_counts)}, "
+            if sum(full_tr_counts) != data.shape[0]:
+                raise ValueError(f"Mismatch: sum(TRs from mm.r0*) = {sum(full_tr_counts)}, "
                                  f"but dfile_rall.1D has {data.shape[0]} rows.")
 
             # Normalize each run segment
             chunks = []
             start = 0
-            for n_trs in tr_counts:
+            for n_trs in full_tr_counts:
                 end = start + n_trs
                 run_data = data[start:end, :]
                 run_norm = run_data - run_data[0, :]
@@ -74,7 +88,8 @@ for base_dir in base_dirs:
                 start = end
 
             norm_data = np.vstack(chunks)
-            out_path = dfile_path.with_name('dfile_rall_norm.1D')
+            norm_data = downsample_data(norm_data, base_dir)
+            out_path = dfile_path.with_name('dfile_rall_norm_downsampled.1D')
             with open(out_path, 'w') as f:
                 f.writelines(header)
                 np.savetxt(f, norm_data, fmt='%.4f')
