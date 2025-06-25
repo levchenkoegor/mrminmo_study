@@ -19,7 +19,7 @@ all_results = []
 all_descriptives = []
 
 # Loop through all combinations of source and param
-for metric in ['mm_norm', 'mm_delt', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
+for metric in ['mm_norm', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
         df_sub = df[(df['metric'] == metric)].copy()
         df_avg = df_sub.groupby(['subject', 'dataset'])['mean'].mean().reset_index()
 
