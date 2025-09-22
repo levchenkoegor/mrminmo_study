@@ -169,10 +169,12 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
         plt.plot(bin_centers, counts[label], color=color, lw=2,
                  path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
-    plt.title(f'Distribution of {param_name} (Grouped)')
-    plt.xlabel(unit_label)
-    plt.ylabel('Count')
-    plt.legend()
+    plt.title(f'Distribution of {param_name} metric', fontsize=22)
+    plt.xlabel(unit_label, fontsize=18)
+    plt.ylabel('Count', fontsize=18)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
     plt.grid(True)
     plt.savefig(grouped_path / f"{param_name}_grouped_distribution.png", dpi=300, bbox_inches='tight')
     plt.close()
@@ -190,10 +192,12 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
         plt.plot(bin_centers, norm_counts, color=color, lw=2,
                  path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
-    plt.title(f'Normalised Distribution of {param_name}')
-    plt.xlabel(unit_label)
-    plt.ylabel('Density')
-    plt.legend()
+    plt.title(f'Distribution of {param_name} metric', fontsize=22)
+    plt.xlabel(unit_label, fontsize=18)
+    plt.ylabel('Density', fontsize=18)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
     plt.grid(True)
     plt.savefig(normalised_dir / f"{param_name}_grouped_normalised.png", dpi=300, bbox_inches='tight')
     plt.close()
