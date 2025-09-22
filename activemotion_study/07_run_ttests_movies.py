@@ -65,18 +65,20 @@ for metric in metrics_to_analyze:
 
     # Axis labels based on metric type
     if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
-        plt.xlabel('Millimetres')
+        plt.xlabel('Millimetres', fontsize=18)
     elif metric in ['roll', 'pitch', 'yaw']:
-        plt.xlabel('Degrees')
+        plt.xlabel('Degrees', fontsize=18)
     elif metric == 'outliers':
-        plt.xlabel('Percentages')
+        plt.xlabel('Percentages', fontsize=18)
     else:
         plt.xlabel(metric)
 
-    plt.ylabel('Count')
-    plt.title(f'Distribution of {metric}')
+    plt.title(f'Distribution of {metric} metric', fontsize=22)
+    plt.ylabel('Count', fontsize=18)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.legend(fontsize=18)
     plt.grid(True)
-    plt.legend()
 
     # Line connecting peaks of bars
     plt.plot(bin_centers, nominmo_counts, color='blue', lw=2,
@@ -150,3 +152,27 @@ else:
     df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_with_fdr.csv", index=False)
 
 print("Descriptive statistics and FDR-corrected test results saved.")
+
+#
+# # ==== ANOVA ====
+# import pingouin as pg
+#
+# anova_results = []
+# for metric in metrics_to_analyze:
+#     # Filter and aggregate
+#     df_metric = df_mot_metrics[df_mot_metrics['metric'] == metric].copy()
+#     df_avg = df_metric.groupby(['subject', 'condition'])['avg_abs'].mean().reset_index()
+#
+#     # Run repeated measures ANOVA
+#     aov = pg.rm_anova(dv='avg_abs', within='condition', subject='subject', data=df_avg, detailed=True, effsize='n2')
+#
+#     # Track metric
+#     aov['metric'] = metric
+#     anova_results.append(aov)
+#
+#     print(f'\nResults for {metric}:')
+#     print(aov)
+#
+# # Save
+# df_all = pd.concat(anova_results, ignore_index=True)
+# df_all.round(4).to_csv(root_fldr / 'derivatives' / 'group_analysis' / 'df_anova_all_metrics_movies.csv', index=False)
