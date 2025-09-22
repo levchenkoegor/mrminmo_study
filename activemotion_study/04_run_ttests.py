@@ -8,7 +8,7 @@ from scipy.stats import gaussian_kde
 import matplotlib.patheffects as path_effects
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives' / 'group_analysis')
 stim_fldr = Path(root_fldr / 'stimuli')
 
@@ -85,15 +85,21 @@ for metric in metrics_to_analyze:
         plt.figure(figsize=(10, 6))
         plt.bar(bin_centers - bar_width / 2, nominmo_counts, width=bar_width, color='blue', label='NoMinMo')
         plt.bar(bin_centers + bar_width / 2, minmo_counts, width=bar_width, color='orange', label='MinMo')
-        plt.title(f'Distribution of {statistic} for {metric}')
+        if statistic == 'avg':
+            statistic_name = 'averages'
+        else:
+            statistic_name = statistic
+        plt.title(f'Distribution of {statistic_name} for {metric} metric', fontsize=24)
         if metric in ['mm', 'mm_delt', 'dS', 'dL', 'dP', 'enorm']:
-            plt.xlabel('Millimetres')
+            plt.xlabel('Millimetres', fontsize=18)
         elif metric in ['roll', 'pitch', 'yaw']:
-            plt.xlabel('Degrees')
+            plt.xlabel('Degrees', fontsize=18)
         elif metric in ['outliers']:
-            plt.xlabel('Percentages')
-        plt.ylabel('Count')
-        plt.legend()
+            plt.xlabel('Percentages', fontsize=18)
+        plt.ylabel('Count', fontsize=18)
+        plt.xticks(fontsize=18)
+        plt.yticks(fontsize=18)
+        plt.legend(fontsize=18)
         plt.grid(True)
 
         # Same KDE overlay for grouped
