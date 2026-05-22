@@ -70,9 +70,17 @@ data_max = {
 # ------------------- Load TR-wise Delta from dfile_rall_delta_downsampled.1D ------------------- #
 data_trwise = {metric: {'Movie I': [], 'Movie II': []} for metric in metrics}
 
+bad_subjects_movie2 = ['03', '07', '24', '37', '39', '43']
+
 for ds_key, ds_label in dataset_labels.items():
     base_path = dataset_paths[ds_key]
     for subj_dir in sorted(base_path.glob('sub-*')):
+
+        # skip bad subjects
+        subj_id = subj_dir.name.replace('sub-', '').zfill(2)
+        if ds_key == 'derivatives_btf' and subj_id in bad_subjects_movie2:
+            continue
+
         dfile = subj_dir / f"{subj_dir.name}.results" / 'dfile_rall_delta_downsampled.1D'
         if dfile.exists():
             try:
