@@ -99,15 +99,22 @@ for label, base_path in datasets.items():
                     tr_start = 0
 
                     for _, row in all_runs.iterrows():
-                        tr_count = int(row['n_trs'])
                         run_i = int(row['run_i'])
 
-                        if run_i in valid_runs:
-                            valid_tr_slices.append((tr_start, tr_start + tr_count))
-                        else:
-                            print(f"Skipping sub-{subj_id} run-{str(run_i).zfill(2)} with {tr_count} TRs")
+                        # Use downsampled TR count from the mm file, not full-res from run_lengths.csv
+                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
+                        if not mm_file.exists():
+                            print(f"Missing mm file for sub-{subj_id} run-{run_i}, skipping")
+                            tr_start += int(row['n_trs']) // 3  # best-effort advance
+                            continue
+                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
 
-                        tr_start += tr_count
+                        if run_i in valid_runs:
+                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
+                        else:
+                            print(f"Skipping sub-{subj_id} run-{str(run_i).zfill(2)} with {tr_count_ds} TRs")
+
+                        tr_start += tr_count_ds
 
                     # Concatenate only the TRs from valid runs
                     valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
