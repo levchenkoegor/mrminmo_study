@@ -6,8 +6,9 @@
 # dataset,subject,filename,run_i,n_trs,run_length_minutes
 ###
 
-export proj_folder=/data/elevchenko/MinMo_movements/retrospective_study
-export output_folder=/egor/MinMo_movements/retrospective_study
+
+export proj_folder=/egor2/egor/MinMo_movements/retrospective_study
+export output_folder=/egor2/egor/MinMo_movements/retrospective_study
 output_csv="${proj_folder}/run_lengths.csv"
 
 # Header
