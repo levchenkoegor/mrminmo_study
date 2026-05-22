@@ -18,10 +18,12 @@ delta_summary = []
 # Metric names for columns
 motion_metrics = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
 
+# Run for each dataset
 for base_dir in base_dirs:
     print(f"\nProcessing dataset: {base_dir}")
     base_path = Path(base_dir)
 
+    # Run for each subject in the dataset
     for subject in sorted(os.listdir(base_path)):
         full_tr_counts = []  # full-resolution TRs per run
         downsampled_tr_counts = []  # after downsampling
@@ -32,6 +34,7 @@ for base_dir in base_dirs:
             print(f"No results ({results_path}) folder for {subject}")
             continue
 
+        # Grab all mm_files for `subject`
         mm_files = sorted(
             f for f in results_path.glob('mm.r0*')
             if '_delt' not in f.name and '_norm' not in f.name
@@ -45,6 +48,7 @@ for base_dir in base_dirs:
                 if data.ndim != 1:
                     raise ValueError(f"Expected 1 column in {mm_file.name}")
 
+                # Normalize each mm_file (each run) and then downsample
                 norm_data = data - data[0]
                 norm_data = downsample_data(norm_data, base_dir)
 
@@ -56,7 +60,7 @@ for base_dir in base_dirs:
                 full_tr_counts.append(len(data))
                 downsampled_tr_counts.append(len(norm_data))
 
-                print(f"Normalized: {mm_file.name} → {norm_path.name}")
+                print(f"Normalized and Downsampled: {mm_file.name} → {norm_path.name}")
 
             except Exception as e:
                 print(f"Error processing {mm_file.name}: {e}")
@@ -85,10 +89,10 @@ for base_dir in base_dirs:
             for i, n_trs in enumerate(full_tr_counts):
                 end = start + n_trs
                 run_data = data[start:end, :]
-                run_norm = run_data - run_data[0, :]
-                run_norm_ds = downsample_data(run_norm, base_dir)
+                run_norm = run_data - run_data[0, :] # normalisation
+                run_norm_ds = downsample_data(run_norm, base_dir) # downsampling
 
-                run_delta = np.diff(run_norm_ds, axis=0)
+                run_delta = np.diff(run_norm_ds, axis=0) # not sure if we need it
                 delta_chunks.append(run_delta)
                 chunks.append(run_norm_ds)
 
@@ -97,14 +101,14 @@ for base_dir in base_dirs:
             norm_data = np.vstack(chunks)
             delta_data = np.vstack(delta_chunks)
 
-            # Save normalized data
+            # Save normalized and dowsampled dfile data
             norm_path = dfile_path.with_name('dfile_rall_norm_downsampled.1D')
             with open(norm_path, 'w') as f:
                 f.writelines(header)
                 np.savetxt(f, norm_data, fmt='%.4f')
-            print(f"Normalized: dfile_rall.1D → {norm_path.name}")
+            print(f"Normalized and Dowsampled: dfile_rall.1D → {norm_path.name}")
 
-            # Save delta data
+            # Save normalized and downsampled delta data
             delta_path = dfile_path.with_name('dfile_rall_delta_downsampled.1D')
             with open(delta_path, 'w') as f:
                 f.writelines(header)
@@ -112,7 +116,7 @@ for base_dir in base_dirs:
             print(f"Delta saved: {delta_path.name}")
 
             # Collect max per column for CSV
-            delta_max = delta_data.max(axis=0)
+            delta_max = np.abs(delta_data).max(axis=0)
             delta_summary.append({
                 'dataset': base_dir,
                 'subject': subject,
