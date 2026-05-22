@@ -20,31 +20,32 @@ all_descriptives = []
 
 # Loop through all combinations of source and param
 for metric in ['mm_norm', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
-        df_sub = df[(df['metric'] == metric)].copy()
-        df_avg = df_sub.groupby(['subject', 'dataset'])['mean'].mean().reset_index()
+    df_sub = df[(df['metric'] == metric)].copy()
+    df_avg = df_sub.groupby(['subject', 'dataset'])['mean'].mean().reset_index()
 
-        # Descriptive stats per dataset
-        desc = df_avg.groupby('dataset')['mean'].agg(['mean', 'std', 'median', 'max']).reset_index()
-        desc['metric'] = metric
-        all_descriptives.append(desc)
+    # Descriptive stats per dataset
+    desc = df_avg.groupby('dataset')['mean'].agg(['mean', 'std', 'median', 'max']).reset_index()
+    desc['metric'] = metric
+    all_descriptives.append(desc)
 
-        # pivot
-        df_wide = df_avg.pivot_table(index='subject', columns=['dataset'], values='mean')
-        df_wide = df_wide.reset_index()
+    # pivot
+    df_wide = df_avg.pivot_table(index='subject', columns=['dataset'], values='mean')
+    df_wide = df_wide.reset_index()
 
-        # melt into long format
-        df_long = df_wide.melt(id_vars='subject', var_name='dataset', value_name='value')
+    # melt into long format
+    df_long = df_wide.melt(id_vars='subject', var_name='dataset', value_name='value')
+    df_long = df_long.dropna(subset=['value'])
 
-        # run ANOVA
-        aov = pg.anova(dv='value', between='dataset', data=df_long, detailed=True)
+    # run ANOVA
+    aov = pg.anova(dv='value', between='dataset', data=df_long, detailed=True)
 
-        # append data to then save to csv
-        aov['metric'] = metric
-        all_results.append(aov)
+    # append data to then save to csv
+    aov['metric'] = metric
+    all_results.append(aov)
 
-        # show the ANOVA table
-        print(f'\nResults for {metric}:')
-        print(aov.round(4))
+    # show the ANOVA table
+    print(f'\nResults for {metric}:')
+    print(aov.round(4))
 
 # Combine and save all results
 df_all = pd.concat(all_results, ignore_index=True)
