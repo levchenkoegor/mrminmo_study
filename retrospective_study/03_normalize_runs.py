@@ -18,12 +18,10 @@ delta_summary = []
 # Metric names for columns
 motion_metrics = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
 
-# Run for each dataset
 for base_dir in base_dirs:
     print(f"\nProcessing dataset: {base_dir}")
     base_path = Path(base_dir)
 
-    # Run for each subject in the dataset
     for subject in sorted(os.listdir(base_path)):
         full_tr_counts = []  # full-resolution TRs per run
         downsampled_tr_counts = []  # after downsampling
@@ -34,7 +32,6 @@ for base_dir in base_dirs:
             print(f"No results ({results_path}) folder for {subject}")
             continue
 
-        # Grab all mm_files for `subject`
         mm_files = sorted(
             f for f in results_path.glob('mm.r0*')
             if '_delt' not in f.name and '_norm' not in f.name
@@ -48,19 +45,25 @@ for base_dir in base_dirs:
                 if data.ndim != 1:
                     raise ValueError(f"Expected 1 column in {mm_file.name}")
 
-                # Normalize each mm_file (each run) and then downsample
                 norm_data = data - data[0]
-                norm_data = downsample_data(norm_data, base_dir)
 
-                norm_path = mm_file.with_name(mm_file.name + '_norm_downsampled')
+                # Save normalised (full resolution, before downsampling)
+                norm_path = mm_file.with_name(mm_file.name + '_norm')
                 with open(norm_path, 'w') as f:
                     f.writelines(header)
                     np.savetxt(f, norm_data, fmt='%.3f')
+                print(f"Normalized: {mm_file.name} → {norm_path.name}")
+
+                # Downsample and save
+                norm_ds_data = downsample_data(norm_data, base_dir)
+                norm_ds_path = mm_file.with_name(mm_file.name + '_norm_downsampled')
+                with open(norm_ds_path, 'w') as f:
+                    f.writelines(header)
+                    np.savetxt(f, norm_ds_data, fmt='%.3f')
+                print(f"Downsampled: {mm_file.name} → {norm_ds_path.name}")
 
                 full_tr_counts.append(len(data))
-                downsampled_tr_counts.append(len(norm_data))
-
-                print(f"Normalized and Downsampled: {mm_file.name} → {norm_path.name}")
+                downsampled_tr_counts.append(len(norm_ds_data))
 
             except Exception as e:
                 print(f"Error processing {mm_file.name}: {e}")
@@ -84,16 +87,18 @@ for base_dir in base_dirs:
                                  f"but dfile_rall.1D has {data.shape[0]} rows.")
 
             chunks = []
+            norm_full_chunks = []
             delta_chunks = []
             start = 0
             for i, n_trs in enumerate(full_tr_counts):
                 end = start + n_trs
                 run_data = data[start:end, :]
-                run_norm = run_data - run_data[0, :] # normalisation
-                run_norm_ds = downsample_data(run_norm, base_dir) # downsampling
+                run_norm = run_data - run_data[0, :]
+                run_norm_ds = downsample_data(run_norm, base_dir)
 
-                run_delta = np.diff(run_norm_ds, axis=0) # not sure if we need it
+                run_delta = np.diff(run_norm_ds, axis=0)
                 delta_chunks.append(run_delta)
+                norm_full_chunks.append(run_norm)
                 chunks.append(run_norm_ds)
 
                 start = end
@@ -101,14 +106,21 @@ for base_dir in base_dirs:
             norm_data = np.vstack(chunks)
             delta_data = np.vstack(delta_chunks)
 
-            # Save normalized and dowsampled dfile data
+            # Save normalised full-resolution data (before downsampling)
+            norm_full_path = dfile_path.with_name('dfile_rall_norm.1D')
+            with open(norm_full_path, 'w') as f:
+                f.writelines(header)
+                np.savetxt(f, np.vstack(norm_full_chunks), fmt='%.4f')
+            print(f"Normalized (full res): dfile_rall.1D → {norm_full_path.name}")
+
+            # Save normalised downsampled data
             norm_path = dfile_path.with_name('dfile_rall_norm_downsampled.1D')
             with open(norm_path, 'w') as f:
                 f.writelines(header)
                 np.savetxt(f, norm_data, fmt='%.4f')
-            print(f"Normalized and Dowsampled: dfile_rall.1D → {norm_path.name}")
+            print(f"Normalized (downsampled): dfile_rall.1D → {norm_path.name}")
 
-            # Save normalized and downsampled delta data
+            # Save delta data
             delta_path = dfile_path.with_name('dfile_rall_delta_downsampled.1D')
             with open(delta_path, 'w') as f:
                 f.writelines(header)
