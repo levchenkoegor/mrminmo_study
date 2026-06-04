@@ -19,37 +19,35 @@ all_results = []
 all_descriptives = []
 
 # Loop through all combinations of source and param
-for metric in ['mm_norm', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
-    df_sub = df[(df['metric'] == metric)].copy()
-    df_avg = df_sub.groupby(['subject', 'dataset'])['mean'].mean().reset_index()
+for metric in ['mm_norm', 'mm_delt', 'dS', 'dL', 'dP', 'roll', 'pitch', 'yaw']:
+    for stat in ['mean', 'median', 'max']:
+        df_sub = df[df['metric'] == metric].copy()
+        df_avg = df_sub.groupby(['subject', 'dataset'])[stat].mean().reset_index()
 
-    # Descriptive stats per dataset
-    desc = df_avg.groupby('dataset')['mean'].agg(['mean', 'std', 'median', 'max']).reset_index()
-    desc['metric'] = metric
-    all_descriptives.append(desc)
+        # Descriptive stats per dataset
+        desc = df_avg.groupby('dataset')[stat].agg(['mean', 'std', 'median', 'max']).reset_index()
+        desc['metric'] = metric
+        desc['stat'] = stat
+        all_descriptives.append(desc)
 
-    # pivot
-    df_wide = df_avg.pivot_table(index='subject', columns=['dataset'], values='mean')
-    df_wide = df_wide.reset_index()
+        # pivot and melt
+        df_wide = df_avg.pivot_table(index='subject', columns='dataset', values=stat)
+        df_wide = df_wide.reset_index()
+        df_long = df_wide.melt(id_vars='subject', var_name='dataset', value_name='value')
+        df_long = df_long.dropna(subset=['value'])
 
-    # melt into long format
-    df_long = df_wide.melt(id_vars='subject', var_name='dataset', value_name='value')
-    df_long = df_long.dropna(subset=['value'])
+        # run ANOVA
+        aov = pg.anova(dv='value', between='dataset', data=df_long, detailed=True)
+        aov['metric'] = metric
+        aov['stat'] = stat
+        all_results.append(aov)
 
-    # run ANOVA
-    aov = pg.anova(dv='value', between='dataset', data=df_long, detailed=True)
-
-    # append data to then save to csv
-    aov['metric'] = metric
-    all_results.append(aov)
-
-    # show the ANOVA table
-    print(f'\nResults for {metric}:')
-    print(aov.round(4))
+        print(f'\nResults for {metric} ({stat}):')
+        print(aov.round(6))
 
 # Combine and save all results
 df_all = pd.concat(all_results, ignore_index=True)
-df_all.round(4).to_csv(output_dir / "df_anova_motion_param_stats.csv", index=False)
+df_all.round(6).to_csv(output_dir / "df_anova_motion_param_stats.csv", index=False)
 
 # Save descriptive stats
 df_descr = pd.concat(all_descriptives, ignore_index=True)
