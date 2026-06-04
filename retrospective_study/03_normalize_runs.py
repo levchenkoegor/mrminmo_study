@@ -67,6 +67,30 @@ for base_dir in base_dirs:
 
             except Exception as e:
                 print(f"Error processing {mm_file.name}: {e}")
+        
+        # Downsample delt files (no normalisation needed - already frame-to-frame differences)
+        delt_files = sorted(
+            f for f in results_path.glob('mm.r0*_delt')
+            if '_norm' not in f.name
+        )
+        for delt_file in delt_files:
+            try:
+                with open(delt_file, 'r') as f:
+                    header = [next(f) for _ in range(2)]
+                data = np.loadtxt(delt_file, skiprows=2)
+
+                if data.ndim != 1:
+                    raise ValueError(f"Expected 1 column in {delt_file.name}")
+
+                delt_ds_data = downsample_data(data, base_dir)
+                delt_ds_path = delt_file.with_name(delt_file.name + '_downsampled')
+                with open(delt_ds_path, 'w') as f:
+                    f.writelines(header)
+                    np.savetxt(f, delt_ds_data, fmt='%.3f')
+                print(f"Downsampled: {delt_file.name} → {delt_ds_path.name}")
+
+            except Exception as e:
+                print(f"Error processing {delt_file.name}: {e}")
 
         # Normalize and downsample dfile_rall.1D
         dfile_path = results_path / 'dfile_rall.1D'
