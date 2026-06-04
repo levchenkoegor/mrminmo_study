@@ -86,41 +86,41 @@ for label, base_path in datasets.items():
             except Exception as e:
                 print(f"Error loading {dfile}: {e}")
 
-        # mm
-        source_type, suffix = 'norm', 'norm_downsampled'
-        mm_data = []
-        for file in sorted(results_path.glob(f'mm.r0[0-9]*_{suffix}')):
-            run_num = int(file.name.split('.')[1][1:3])
-            if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
-                continue
-            try:
-                data = np.loadtxt(file, skiprows=2)
-                data = np.abs(data)
-
-                if data.ndim == 2 and data.shape[1] == 1:
-                    data = data[:, 0]
-                elif data.ndim == 1:
-                    pass
-                else:
-                    print(f"Skipping {file}: Unexpected shape {data.shape}")
+        # mm_norm and mm_delt
+        for source_type, suffix in [('norm', 'norm_downsampled'), ('delt', 'delt_downsampled')]:
+            mm_data = []
+            for file in sorted(results_path.glob(f'mm.r0[0-9]*_{suffix}')):
+                run_num = int(file.name.split('.')[1][1:3])
+                if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
                     continue
+                try:
+                    data = np.loadtxt(file, skiprows=2)
+                    data = np.abs(data)
 
-                mm_data.append(data)
-            except Exception as e:
-                print(f"Error reading {file}: {e}")
+                    if data.ndim == 2 and data.shape[1] == 1:
+                        data = data[:, 0]
+                    elif data.ndim == 1:
+                        pass
+                    else:
+                        print(f"Skipping {file}: Unexpected shape {data.shape}")
+                        continue
 
-        if mm_data:
-            mm_data = np.concatenate(mm_data)
-            records.append({
-                'subject': subj_id,
-                'dataset': label,
-                'metric': f'mm_{source_type}',
-                'source': f'mm_{source_type}',
-                'mean': round(np.mean(mm_data), 4),
-                'median': round(np.median(mm_data), 4),
-                'max': round(np.max(mm_data), 4),
-                'min': round(np.min(mm_data), 4)
-            })
+                    mm_data.append(data)
+                except Exception as e:
+                    print(f"Error reading {file}: {e}")
+
+            if mm_data:
+                mm_data = np.concatenate(mm_data)
+                records.append({
+                    'subject': subj_id,
+                    'dataset': label,
+                    'metric': f'mm_{source_type}',
+                    'source': f'mm_{source_type}',
+                    'mean': round(np.mean(mm_data), 4),
+                    'median': round(np.median(mm_data), 4),
+                    'max': round(np.max(mm_data), 4),
+                    'min': round(np.min(mm_data), 4)
+                })
 
 # Save to csv file
 df = pd.DataFrame(records)
