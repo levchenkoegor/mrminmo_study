@@ -40,10 +40,14 @@ for _, row in valid_nndb_runs.iterrows():
 displacement = defaultdict(list)
 displacement_delt = defaultdict(list)  # New: delta motion
 motion_params = defaultdict(lambda: defaultdict(list))  # dataset -> param -> list of values
+enorm_values = defaultdict(list)       # NEW: dataset -> list of enorm values
+outlier_values = defaultdict(list)     # NEW: dataset -> list of outlier fraction values
 
 for label, base_path in datasets.items():
     for subject in sorted(base_path.iterdir()):
-        subj_id = subject.name.replace('sub-', '').zfill(2)
+        subj_id = subject.name.replace('sub-', '').zfill(2)      # zero-padded, for lookups
+        afni_subj_id = subject.name.replace('sub-', '', 1)       # raw, for motion_*/outcount filenames
+
         if label == 'Movie II' and subj_id in bad_subjects_movie2:
             print(f"Skipping bad MovieProject2 subject: {subject.name}")
             continue
@@ -126,6 +130,80 @@ for label, base_path in datasets.items():
 
             except Exception as e:
                 print(f"Could not load {dfile}: {e}")
+
+        # NEW: Enorm (motion_{afni_subj_id}_enorm_downsampled.1D, produced by 03_normalize_runs.py)
+        enorm_file = results_path / f'motion_{afni_subj_id}_enorm_downsampled.1D'
+        if enorm_file.exists():
+            try:
+                data = np.loadtxt(enorm_file)
+
+                if label == 'Movie I':
+                    # Same run-inclusion logic as the dfile block above, repeated here
+                    # since enorm is a separate file at the same downsampled resolution.
+                    all_runs = run_info[
+                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
+
+                    valid_runs = valid_run_indices[subj_id]
+                    valid_tr_slices = []
+                    tr_start = 0
+
+                    for _, row in all_runs.iterrows():
+                        run_i = int(row['run_i'])
+                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
+                        if not mm_file.exists():
+                            tr_start += int(row['n_trs']) // 3
+                            continue
+                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
+
+                        if run_i in valid_runs:
+                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
+                        tr_start += tr_count_ds
+
+                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
+                else:
+                    valid_data = data
+
+                enorm_values[label].extend(np.abs(valid_data))
+            except Exception as e:
+                print(f"Could not load {enorm_file}: {e}")
+        else:
+            print(f"Missing: {enorm_file.name} for {subject.name}")
+
+        # NEW: Outlier fraction (outcount_rall_downsampled.1D, produced by 03_normalize_runs.py)
+        outcount_file = results_path / 'outcount_rall_downsampled.1D'
+        if outcount_file.exists():
+            try:
+                data = np.loadtxt(outcount_file)
+
+                if label == 'Movie I':
+                    all_runs = run_info[
+                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
+
+                    valid_runs = valid_run_indices[subj_id]
+                    valid_tr_slices = []
+                    tr_start = 0
+
+                    for _, row in all_runs.iterrows():
+                        run_i = int(row['run_i'])
+                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
+                        if not mm_file.exists():
+                            tr_start += int(row['n_trs']) // 3
+                            continue
+                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
+
+                        if run_i in valid_runs:
+                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
+                        tr_start += tr_count_ds
+
+                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
+                else:
+                    valid_data = data
+
+                outlier_values[label].extend(valid_data)  # already non-negative
+            except Exception as e:
+                print(f"Could not load {outcount_file}: {e}")
+        else:
+            print(f"Missing: {outcount_file.name} for {subject.name}")
 
 
 # ------------------- Plotting Function ------------------- #
@@ -225,3 +303,11 @@ for param in motion_param_labels:
                        unit_label=unit,
                        overlap_path=overlap_dir,
                        grouped_path=grouped_dir)
+
+# NEW: Enorm
+plot_distributions('Enorm', enorm_values, 'mm / TR',
+                   overlap_path=overlap_dir, grouped_path=grouped_dir)
+
+# NEW: Outlier fraction
+plot_distributions('OutlierFraction', outlier_values, 'Fraction of voxels',
+                   overlap_path=overlap_dir, grouped_path=grouped_dir)
