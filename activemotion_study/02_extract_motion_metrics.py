@@ -80,6 +80,9 @@ results = []
 for subj_id in subjects:
     condition_sequence = sequence_df.loc[sequence_df['Subj #'] == subj_id, 'Conditions'].values[0].split(' ')
 
+    # Run sequence for the current subject (e.g. "2 5 4 1 6 3"): stimulus run order in acquisition order
+    run_sequence = list(map(int, sequence_df.loc[sequence_df['Subj #'] == subj_id, 'Runs'].values[0].split()))
+
     for cond_i, cond_name in enumerate(condition_sequence):
         cond_folder = Path(deriv_fldr / f'sub-{subj_id}/sub-{subj_id}_task-mvts_cond-{cond_name}/sub-{subj_id}_task-mvts_cond-{cond_name}.results')
 
@@ -103,11 +106,9 @@ for subj_id in subjects:
             if timing_content is None:
                 continue
 
-            # Split and adjust timing content
-            if cond_i == 0:
-                timing_content = timing_content[:3]
-            elif cond_i == 1:
-                timing_content = timing_content[3:]
+            # Select timing lines in acquisition order: first 3 runs for condition 1, last 3 for condition 2
+            run_sequence_cond = run_sequence[:3] if cond_i == 0 else run_sequence[3:6]
+            timing_content = [timing_content[run_idx - 1] for run_idx in run_sequence_cond]  # Adjust for zero-indexing
 
             onset_times = []
             for line in timing_content:
