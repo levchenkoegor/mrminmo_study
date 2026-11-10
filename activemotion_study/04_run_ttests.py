@@ -31,14 +31,14 @@ for metric in metrics_to_analyze:
     minmo_data = df_mot_metrics[(df_mot_metrics['condition'] == 'MinMo') & (df_mot_metrics['metric'] == metric)]
 
     for statistic in ['max', 'min', 'avg']:
-        # Extract statistic
-        nominmo_series = nominmo_data[statistic]
-        minmo_series = minmo_data[statistic]
-
-        # Apply absolute values where relevant
+        # Extract statistic. For the six motion parameters (signed values), use the
+        # statistic of the absolute trial values, e.g. max(|x|) rather than |max(x)|
         if metric in ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']:
-            nominmo_series = nominmo_series.abs()
-            minmo_series = minmo_series.abs()
+            column = f'{statistic}_abs'
+        else:
+            column = statistic
+        nominmo_series = nominmo_data[column]
+        minmo_series = minmo_data[column]
 
         # Shared binning
         combined_series = pd.concat([nominmo_series, minmo_series])

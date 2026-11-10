@@ -55,7 +55,7 @@ def get_post_onset_metrics(motion_data, onset_times, col_idx, sampling_interval=
     return trials, averages, averages_abs
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives')
 stim_fldr = Path(root_fldr / 'stimuli')
 
@@ -140,7 +140,10 @@ for subj_id in subjects:
                                 "avg_abs": avg_abs,
                                 "med": np.median(trial),
                                 "max": np.max(trial),
-                                "min": np.min(trial)
+                                "min": np.min(trial),
+                                "med_abs": np.median(np.abs(trial)),
+                                "max_abs": np.max(np.abs(trial)),
+                                "min_abs": np.min(np.abs(trial))
                             })
                 else:
                     trials, averages, averages_abs = get_post_onset_metrics(motion_data, onset_times, col_idx=0)
@@ -156,7 +159,10 @@ for subj_id in subjects:
                             "avg_abs": avg_abs,
                             "med": np.median(trial),
                             "max": np.max(trial),
-                            "min": np.min(trial)
+                            "min": np.min(trial),
+                            "med_abs": np.median(np.abs(trial)),
+                            "max_abs": np.max(np.abs(trial)),
+                            "min_abs": np.min(np.abs(trial))
                         })
 
 # Save to CSV
