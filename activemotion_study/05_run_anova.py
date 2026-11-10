@@ -1,12 +1,13 @@
 import pandas as pd
 import pingouin as pg
 from pathlib import Path
+from statsmodels.stats.multitest import multipletests
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="pingouin")
 
 # Load the dataset
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 file_path = Path(root_fldr / 'derivatives' / 'group_analysis' / 'df_motion_metrics_all.csv')
 df = pd.read_csv(file_path)
 
@@ -51,7 +52,7 @@ for metric in ['enorm', 'mm', 'mm_delt', 'outliers', 'dS', 'dL', 'dP', 'roll', '
     #df_long.to_csv(root_fldr / 'derivatives' / 'group_analysis' / 'forJASP_{metric}.csv', index=False)
 
     # run repeated measures ANOVA
-    aov = pg.rm_anova(dv='value', within=['condition', 'movement'], subject='subject', data=df_long, detailed=True)
+    aov = pg.rm_anova(dv='value', within=['condition', 'movement'], subject='subject', data=df_long, detailed=True, effsize='n2')
 
     # append data to then save to csv
     aov['metric'] = metric
@@ -61,6 +62,6 @@ for metric in ['enorm', 'mm', 'mm_delt', 'outliers', 'dS', 'dL', 'dP', 'roll', '
     print(f'\nResults for {metric}:')
     print(aov)
 
-# after the loop finishes
+# Save to file
 df_all = pd.concat(all_results, ignore_index=True)
 df_all.round(4).to_csv(root_fldr / 'derivatives' / 'group_analysis' / 'anova_all_metrics.csv', index=False)
