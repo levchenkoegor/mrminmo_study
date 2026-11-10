@@ -117,7 +117,7 @@ def plot_each_trial_and_save(erp_data, time_window_corrected, headers, movement_
     plt.close(fig)
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives')
 stim_fldr = Path(root_fldr / 'stimuli')
 

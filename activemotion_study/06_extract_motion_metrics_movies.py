@@ -18,7 +18,7 @@ def load_motion_data(motion_file, skip_lines=0):
     return motion_data
 
 # Paths
-root_fldr = Path('/data/elevchenko/MinMo_movements/activemotion_study')
+root_fldr = Path('/egor2/egor/MinMo_movements/activemotion_study')
 deriv_fldr = Path(root_fldr / 'derivatives')
 
 # Load subject list
