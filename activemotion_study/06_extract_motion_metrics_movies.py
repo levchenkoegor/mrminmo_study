@@ -98,3 +98,25 @@ if dummydata == 1:
 else:
     df.to_csv(deriv_fldr / 'group_analysis' / "df_motion_metrics_movies.csv", index=False)
     print("Metrics saved to df_motion_metrics_movies.csv")
+
+# ==== Subject-wise summaries (input for the Wilcoxon tests in 07_run_ttests_movies.py) ====
+# Per subject and device, the volumewise series is summarised by its mean, median and maximum.
+# Absolute values are taken first for the six realignment parameters; the other metrics are never negative.
+# Note: the 'med', 'max' and 'min' columns above are computed on the signed series; use this table instead.
+signed_metrics = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
+summaries = {'mean': np.mean, 'median': np.median, 'max': np.max}
+
+rows = []
+for _, r in df.iterrows():
+    series = np.asarray(r['trial'], dtype=float)
+    if r['metric'] in signed_metrics:
+        series = np.abs(series)
+    for stat_name, func in summaries.items():
+        rows.append({'subject': r['subject'], 'device': r['condition'], 'metric': r['metric'],
+                     'statistic': stat_name, 'value': func(series)})
+df_subj = pd.DataFrame(rows)
+
+subj_fname = "df_motion_metrics_movies_subjectwise_dummydata.csv" if dummydata == 1 \
+    else "df_motion_metrics_movies_subjectwise.csv"
+df_subj.to_csv(deriv_fldr / 'group_analysis' / subj_fname, index=False)
+print(f"Subject-wise summaries saved to {subj_fname}")

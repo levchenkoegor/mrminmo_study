@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_ind, shapiro, levene, mannwhitneyu, gaussian_kde
-from statsmodels.stats.multitest import fdrcorrection
+from scipy.stats import wilcoxon
 from pathlib import Path
 import numpy as np
 import matplotlib.patheffects as path_effects
@@ -21,11 +20,7 @@ else:
 # Metrics to analyze
 metrics_to_analyze = ['mm', 'mm_delt', 'enorm', 'outliers', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
 
-# Initialize a results list for descriptive statistics and p-values
-descriptive_results = []
-p_values = []
-
-# Loop through each metric
+# ==== Volumewise distribution plots (volumes pooled across subjects) ====
 for metric in metrics_to_analyze:
     print(f"\n--- Analyzing Metric: {metric} ---\n")
 
@@ -51,11 +46,6 @@ for metric in metrics_to_analyze:
     # Histogram counts
     nominmo_counts, _ = np.histogram(nominmo_series, bins=bin_edges)
     minmo_counts, _ = np.histogram(minmo_series, bins=bin_edges)
-
-    # KDE (optional, not plotted here)
-    kde_nominmo = gaussian_kde(nominmo_series)
-    kde_minmo = gaussian_kde(minmo_series)
-    x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
 
     # --------- Save Grouped Histogram ---------
     plt.figure(figsize=(10, 6))
@@ -96,83 +86,37 @@ for metric in metrics_to_analyze:
     plt.close()
     print(f"Grouped bar plot saved to {plot_grouped_path}")
 
-    # Normality test (Shapiro-Wilk)
-    shapiro_nominmo = shapiro(nominmo_series)
-    shapiro_minmo = shapiro(minmo_series)
+# ==== Paired Wilcoxon signed-rank tests on subject-wise summaries (manuscript: 'Head motion during short movies') ====
+# Input: subject-wise mean/median/max of absolute values from 06_extract_motion_metrics_movies.py.
+# Subjects (n = 25) are the unit of analysis.
+# Reported one-tailed (preregistered: MinMo < NoMinMo), two-tailed, and one-tailed in the opposite direction.
+subj_fname = "df_motion_metrics_movies_subjectwise_dummydata.csv" if dummydata == 1 \
+    else "df_motion_metrics_movies_subjectwise.csv"
+df_subj = pd.read_csv(deriv_fldr / subj_fname)
 
-    # Variance equality test (Levene's test)
-    levene_test = levene(nominmo_series, minmo_series)
+wilcoxon_results = []
+for metric in metrics_to_analyze:
+    for stat_name in ['mean', 'median', 'max']:
+        wide = (df_subj[(df_subj['metric'] == metric) & (df_subj['statistic'] == stat_name)]
+                .pivot(index='subject', columns='device', values='value').dropna())
+        minmo, nominmo = wide['MinMo'], wide['NoMinMo']
+        w_two = wilcoxon(minmo, nominmo, alternative='two-sided')
+        w_one = wilcoxon(minmo, nominmo, alternative='less')
+        wilcoxon_results.append({
+            'metric': metric, 'statistic': stat_name, 'n': len(wide),
+            'MinMo_median': minmo.median(), 'NoMinMo_median': nominmo.median(),
+            'MinMo_mean': minmo.mean(), 'NoMinMo_mean': nominmo.mean(),
+            'pct_reduction_mean': (nominmo.mean() - minmo.mean()) / nominmo.mean() * 100,
+            'n_MinMo_lower': int((minmo < nominmo).sum()),
+            'W': w_two.statistic, 'p_two_tailed': w_two.pvalue, 'p_one_tailed': w_one.pvalue,
+            # exploratory, not preregistered: MinMo > NoMinMo
+            'p_one_tailed_greater': wilcoxon(minmo, nominmo, alternative='greater').pvalue,
+        })
+wilcoxon_results = pd.DataFrame(wilcoxon_results)
 
-    # Select appropriate test based on normality and variance
-    if shapiro_nominmo.pvalue > 0.05 and shapiro_minmo.pvalue > 0.05 and levene_test.pvalue > 0.05:
-        t_test = ttest_ind(minmo_series, nominmo_series, alternative='less')
-        test_name = "One-tailed T-test (MinMo < NoMinMo)"
-        test_pvalue = t_test.pvalue
-    else:
-        u_test = mannwhitneyu(minmo_series, nominmo_series, alternative='less')
-        test_name = "One-tailed Mann-Whitney U (MinMo < NoMinMo)"
-        test_pvalue = u_test.pvalue
+wilcoxon_fname = "wilcoxon_movies_subjectwise_dummydata.csv" if dummydata == 1 else "wilcoxon_movies_subjectwise.csv"
+wilcoxon_results.to_csv(deriv_fldr / wilcoxon_fname, index=False)
 
-    # Append p-value for FDR correction
-    p_values.append(test_pvalue)
-
-    # Append descriptive statistics and test results
-    descriptive_results.append({
-        "metric": metric,
-        "NoMinMo_mean": np.mean(nominmo_series),
-        "NoMinMo_std": np.std(nominmo_series),
-        "NoMinMo_median": np.median(nominmo_series),
-        "NoMinMo_min": np.min(nominmo_series),
-        "NoMinMo_max": np.max(nominmo_series),
-        "MinMo_mean": np.mean(minmo_series),
-        "MinMo_std": np.std(minmo_series),
-        "MinMo_median": np.median(minmo_series),
-        "MinMo_min": np.min(minmo_series),
-        "MinMo_max": np.max(minmo_series),
-        "normality_NoMinMo_p": shapiro_nominmo.pvalue,
-        "normality_MinMo_p": shapiro_minmo.pvalue,
-        "levene_p": levene_test.pvalue,
-        "test": test_name,
-        "test_pvalue": test_pvalue,
-        "significant": False  # Placeholder, will be updated after FDR correction
-    })
-
-# Apply FDR correction
-_, corrected_p_values = fdrcorrection(p_values, alpha=0.05)
-for i, corrected_p in enumerate(corrected_p_values):
-    descriptive_results[i]["corrected_pvalue"] = corrected_p
-    descriptive_results[i]["significant"] = corrected_p < 0.05
-
-# Convert results to a DataFrame and save as CSV
-df_results = pd.DataFrame(descriptive_results).round(4)
-
-if dummydata == 1:
-    df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_dummydata_with_fdr.csv", index=False)
-else:
-    df_results.to_csv(deriv_fldr / "descriptive_statistics_movies_with_fdr.csv", index=False)
-
-print("Descriptive statistics and FDR-corrected test results saved.")
-
-#
-# # ==== ANOVA ====
-# import pingouin as pg
-#
-# anova_results = []
-# for metric in metrics_to_analyze:
-#     # Filter and aggregate
-#     df_metric = df_mot_metrics[df_mot_metrics['metric'] == metric].copy()
-#     df_avg = df_metric.groupby(['subject', 'condition'])['avg_abs'].mean().reset_index()
-#
-#     # Run repeated measures ANOVA
-#     aov = pg.rm_anova(dv='avg_abs', within='condition', subject='subject', data=df_avg, detailed=True, effsize='n2')
-#
-#     # Track metric
-#     aov['metric'] = metric
-#     anova_results.append(aov)
-#
-#     print(f'\nResults for {metric}:')
-#     print(aov)
-#
-# # Save
-# df_all = pd.concat(anova_results, ignore_index=True)
-# df_all.round(4).to_csv(root_fldr / 'derivatives' / 'group_analysis' / 'df_anova_all_metrics_movies.csv', index=False)
+pd.set_option('display.width', 250)
+print(wilcoxon_results.to_string(index=False, float_format=lambda x: f'{x:.4g}'))
+print(f'\nThe file {wilcoxon_fname} was saved')
