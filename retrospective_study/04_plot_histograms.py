@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from collections import defaultdict
+from run_selection import bad_subjects_movie2, run_table, keep_valid
 from scipy.stats import gaussian_kde
 import matplotlib.patheffects as path_effects
 
@@ -20,28 +21,16 @@ datasets = {
     'Movie I': Path('derivatives_nndb'),
     'Movie II': Path('derivatives_btf')
 }
+DISPLAY = {'Movie I': 'Standard padding', 'Movie II': 'MR-MinMo'}
+COLORS = {'Movie I': '#2a78d6', 'Movie II': '#eb6834'}  # validated categorical slots 1-2
 motion_param_labels = ['roll', 'pitch', 'yaw', 'dS', 'dL', 'dP']
-bad_subjects_movie2 = ['03', '07', '24', '37', '39', '43']  # based on the notes from the operator
-
-# Load run length data and filter NNDB runs with >= 600 TRs
-run_info = pd.read_csv('run_lengths.csv')
-valid_nndb_runs = run_info[(run_info['dataset'] == 'NNdb') & (run_info['n_trs'] >= 600)]
-
-# Convert to a dict: subject_id -> list of valid run indices (1-based)
-valid_run_indices = defaultdict(list)
-valid_run_lengths = defaultdict(list)
-for _, row in valid_nndb_runs.iterrows():
-    subj = str(row['subject']).zfill(2)
-    valid_run_indices[subj].append(int(row['run_i']))
-    valid_run_lengths[subj].append(int(row['n_trs']))
 
 
 # ------------------- Data Collection ------------------- #
 displacement = defaultdict(list)
-displacement_delt = defaultdict(list)  # New: delta motion
 motion_params = defaultdict(lambda: defaultdict(list))  # dataset -> param -> list of values
-enorm_values = defaultdict(list)       # NEW: dataset -> list of enorm values
-outlier_values = defaultdict(list)     # NEW: dataset -> list of outlier fraction values
+enorm_values = defaultdict(list)       # dataset -> list of enorm values
+outlier_values = defaultdict(list)     # dataset -> list of outlier fraction values
 
 for label, base_path in datasets.items():
     for subject in sorted(base_path.iterdir()):
@@ -56,17 +45,16 @@ for label, base_path in datasets.items():
         if not results_path.exists():
             continue
 
-        if label == 'Movie I':
-            if subj_id not in valid_run_indices:
-                print(f"Skipping subject with no valid runs: sub-{subj_id}")
-                continue
+        runs = run_table(label, subj_id, results_path)
+        valid_runs = {run_i for run_i, _, valid in runs if valid}
+        if not valid_runs:
+            print(f"Skipping subject with no valid runs: sub-{subj_id}")
+            continue
 
         # Max displacement
         for file in sorted(results_path.glob('mm.r0[0-9]*_norm_downsampled')):
             run_num = int(file.name.split('.')[1][1:3])
-            if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
-                continue
-            if '_delt' in file.name or '_norm_norm' in file.name:
+            if run_num not in valid_runs:
                 continue
             try:
                 data = np.loadtxt(file, skiprows=2)
@@ -74,132 +62,31 @@ for label, base_path in datasets.items():
             except Exception as e:
                 print(f"Could not load {file}: {e}")
 
-        # Delta displacement
-        for file in results_path.glob('mm.r0*_delt'):
-            run_num = int(file.name.split('.')[1][1:3])
-            if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
-                continue
-            if '_norm' in file.name:
-                continue
-            try:
-                data = np.loadtxt(file, skiprows=2)
-                displacement_delt[label].extend(np.abs(data))
-            except Exception as e:
-                print(f"Could not load {file}: {e}")
-
         # 6 motion parameters
         dfile = results_path / 'dfile_rall_norm_downsampled.1D'
         if dfile.exists():
             try:
-                data = np.loadtxt(dfile, comments='#')
-
-                if label == 'Movie I':
-                    # Get all run lengths (valid and invalid) for this subject
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
-
-                    valid_runs = valid_run_indices[subj_id]
-                    valid_tr_slices = []
-                    tr_start = 0
-
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-
-                        # Use downsampled TR count from the mm file, not full-res from run_lengths.csv
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            print(f"Missing mm file for sub-{subj_id} run-{run_i}, skipping")
-                            tr_start += int(row['n_trs']) // 3  # best-effort advance
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_runs:
-                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
-                        else:
-                            print(f"Skipping sub-{subj_id} run-{str(run_i).zfill(2)} with {tr_count_ds} TRs")
-
-                        tr_start += tr_count_ds
-
-                    # Concatenate only the TRs from valid runs
-                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
-                else:
-                    valid_data = data
-
+                valid_data = keep_valid(np.loadtxt(dfile, comments='#'), runs)
                 for i, param in enumerate(motion_param_labels):
                     motion_params[label][param].extend(np.abs(valid_data[:, i]))
-
             except Exception as e:
                 print(f"Could not load {dfile}: {e}")
 
-        # NEW: Enorm (motion_{afni_subj_id}_enorm_downsampled.1D, produced by 03_normalize_runs.py)
+        # Enorm (motion_{afni_subj_id}_enorm_downsampled.1D, produced by 03_normalize_runs.py)
         enorm_file = results_path / f'motion_{afni_subj_id}_enorm_downsampled.1D'
         if enorm_file.exists():
             try:
-                data = np.loadtxt(enorm_file)
-
-                if label == 'Movie I':
-                    # Same run-inclusion logic as the dfile block above, repeated here
-                    # since enorm is a separate file at the same downsampled resolution.
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
-
-                    valid_runs = valid_run_indices[subj_id]
-                    valid_tr_slices = []
-                    tr_start = 0
-
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            tr_start += int(row['n_trs']) // 3
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_runs:
-                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
-                        tr_start += tr_count_ds
-
-                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
-                else:
-                    valid_data = data
-
-                enorm_values[label].extend(np.abs(valid_data))
+                enorm_values[label].extend(np.abs(keep_valid(np.loadtxt(enorm_file), runs)))
             except Exception as e:
                 print(f"Could not load {enorm_file}: {e}")
         else:
             print(f"Missing: {enorm_file.name} for {subject.name}")
 
-        # NEW: Outlier fraction (outcount_rall_downsampled.1D, produced by 03_normalize_runs.py)
+        # Outlier fraction (outcount_rall_downsampled.1D, produced by 03_normalize_runs.py)
         outcount_file = results_path / 'outcount_rall_downsampled.1D'
         if outcount_file.exists():
             try:
-                data = np.loadtxt(outcount_file)
-
-                if label == 'Movie I':
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') & (run_info['subject'] == int(subj_id))].sort_values(by='run_i')
-
-                    valid_runs = valid_run_indices[subj_id]
-                    valid_tr_slices = []
-                    tr_start = 0
-
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            tr_start += int(row['n_trs']) // 3
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_runs:
-                            valid_tr_slices.append((tr_start, tr_start + tr_count_ds))
-                        tr_start += tr_count_ds
-
-                    valid_data = np.concatenate([data[start:end] for start, end in valid_tr_slices], axis=0)
-                else:
-                    valid_data = data
-
-                outlier_values[label].extend(valid_data)  # already non-negative
+                outlier_values[label].extend(keep_valid(np.loadtxt(outcount_file), runs))  # already non-negative
             except Exception as e:
                 print(f"Could not load {outcount_file}: {e}")
         else:
@@ -221,9 +108,9 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
 
     # ---------- Overlapping Histogram + KDE ---------- #
     plt.figure(figsize=(10, 6))
-    for label, color in zip(values_dict, ['blue', 'orange']):
+    for label, color in ((k, COLORS[k]) for k in values_dict):
         data = np.array(values_dict[label])
-        plt.hist(data, bins=bin_edges, alpha=0.5, color=color, label=f"{label} (hist)", edgecolor='black')
+        plt.hist(data, bins=bin_edges, alpha=0.5, color=color, label=f"{DISPLAY[label]} (hist)", edgecolor='black')
         kde = gaussian_kde(data)
         x_vals = np.linspace(bin_edges.min(), bin_edges.max(), 1000)
         bin_width = bin_edges[1] - bin_edges[0]
@@ -245,12 +132,12 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
 
     # ---------- Grouped Bar Plot + Peak Lines ---------- #
     plt.figure(figsize=(10, 6))
-    for idx, (label, color) in enumerate(zip(values_dict, ['blue', 'orange'])):
+    for idx, (label, color) in enumerate(((k, COLORS[k]) for k in values_dict)):
         shift = (-1 if idx == 0 else 1) * bar_width / 2
-        plt.bar(bin_centers + shift, counts[label], width=bar_width, color=color, label=label)
+        plt.bar(bin_centers + shift, counts[label], width=bar_width, color=color, label=DISPLAY[label])
 
     # Connect peaks
-    for label, color in zip(values_dict, ['blue', 'orange']):
+    for label, color in ((k, COLORS[k]) for k in values_dict):
         plt.plot(bin_centers, counts[label], color=color, lw=2,
                  path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
 
@@ -267,12 +154,12 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
     # ---------- Normalised Grouped Plot (Density) ---------- #
     plt.figure(figsize=(10, 6))
 
-    for idx, (label, color) in enumerate(zip(values_dict, ['blue', 'orange'])):
+    for idx, (label, color) in enumerate(((k, COLORS[k]) for k in values_dict)):
         shift = (-1 if idx == 0 else 1) * bar_width / 2
         norm_counts = counts[label] / np.sum(counts[label])
-        plt.bar(bin_centers + shift, norm_counts, width=bar_width, color=color, label=label)
+        plt.bar(bin_centers + shift, norm_counts, width=bar_width, color=color, label=DISPLAY[label])
 
-    for label, color in zip(values_dict, ['blue', 'orange']):
+    for label, color in ((k, COLORS[k]) for k in values_dict):
         norm_counts = counts[label] / np.sum(counts[label])
         plt.plot(bin_centers, norm_counts, color=color, lw=2,
                  path_effects=[path_effects.withStroke(linewidth=3, foreground='black')])
@@ -292,9 +179,6 @@ def plot_distributions(param_name, values_dict, unit_label, overlap_path, groupe
 # Max displacement
 plot_distributions('MaxDisplacement', displacement, 'Millimetres',
                    overlap_path=overlap_dir, grouped_path=grouped_dir)
-# Delta displacement
-# plot_distributions('MaxDisplacement_Delta', displacement_delt, 'Millimetres',
-#                    overlap_path=overlap_dir, grouped_path=grouped_dir)
 
 # 6 motion parameters
 for param in motion_param_labels:

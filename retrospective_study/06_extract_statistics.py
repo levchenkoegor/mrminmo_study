@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from collections import defaultdict
 import warnings
+
+from run_selection import bad_subjects_movie2, run_table, keep_valid
 
 warnings.simplefilter("ignore")
 
@@ -11,15 +12,6 @@ datasets = {
     'Movie I': Path('derivatives_nndb'),
     'Movie II': Path('derivatives_btf')
 }
-bad_subjects_movie2 = ['03', '07', '24', '37', '39', '43']
-run_info = pd.read_csv('run_lengths.csv')
-valid_nndb_runs = run_info[(run_info['dataset'] == 'NNdb') & (run_info['n_trs'] >= 600)]
-
-# Dict: subject -> valid run indices
-valid_run_indices = defaultdict(list)
-for _, row in valid_nndb_runs.iterrows():
-    subj = str(row['subject']).zfill(2)
-    valid_run_indices[subj].append(int(row['run_i']))
 
 records = []
 
@@ -30,47 +22,23 @@ for label, base_path in datasets.items():
 
         if label == 'Movie II' and subj_id in bad_subjects_movie2:
             continue
-        if label == 'Movie I' and subj_id not in valid_run_indices:
-            continue
 
         results_path = subject / f"{subject.name}.results"
         if not results_path.exists():
             continue
 
+        runs = run_table(label, subj_id, results_path)
+        if not any(valid for _, _, valid in runs):
+            continue
+        dropped = [run_i for run_i, _, valid in runs if not valid]
+        if dropped:
+            print(f"{label} sub-{subj_id}: excluded short runs {dropped}")
+
         # dfile_rall_norm_downsampled
         dfile = results_path / "dfile_rall_norm_downsampled.1D"
         if dfile.exists():
             try:
-                data = np.loadtxt(dfile, comments='#')
-                if label == 'Movie I':
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') &
-                        (run_info['subject'] == int(subj_id))
-                    ].sort_values(by='run_i')
-
-                    tr_start = 0
-                    valid_trs = []
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-
-                        # Use downsampled TR count from mm_norm_downsampled file,
-                        # not full-res count from run_lengths.csv, because dfile is
-                        # already downsampled and slicing with full-res counts would
-                        # mis-align all runs after the first.
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            print(f"Warning: missing {mm_file.name} for sub-{subj_id}, skipping run {run_i}")
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_run_indices[subj_id]:
-                            end = tr_start + tr_count_ds
-                            valid_trs.append(data[tr_start:end])
-                        tr_start += tr_count_ds
-
-                    if not valid_trs:
-                        continue
-                    data = np.concatenate(valid_trs, axis=0)
+                data = keep_valid(np.loadtxt(dfile, comments='#'), runs)
 
                 for i, param in enumerate(motion_param_labels):
                     param_data = np.abs(data[:, i])
@@ -88,12 +56,13 @@ for label, base_path in datasets.items():
             except Exception as e:
                 print(f"Error loading {dfile}: {e}")
 
-        # mm_norm and mm_delt
+        # mm_norm and mm_delt (one file per run)
+        valid_runs = {run_i for run_i, _, valid in runs if valid}
         for source_type, suffix in [('norm', 'norm_downsampled'), ('delt', 'delt_downsampled')]:
             mm_data = []
             for file in sorted(results_path.glob(f'mm.r0[0-9]*_{suffix}')):
                 run_num = int(file.name.split('.')[1][1:3])
-                if label == 'Movie I' and run_num not in valid_run_indices[subj_id]:
+                if run_num not in valid_runs:
                     continue
                 try:
                     data = np.loadtxt(file, skiprows=2)
@@ -124,37 +93,11 @@ for label, base_path in datasets.items():
                     'min': round(np.min(mm_data), 4)
                 })
 
-        # NEW: Enorm (motion_{afni_subj_id}_enorm_downsampled.1D, produced by 03_normalize_runs.py)
+        # Enorm (motion_{afni_subj_id}_enorm_downsampled.1D, produced by 03_normalize_runs.py)
         enorm_file = results_path / f'motion_{afni_subj_id}_enorm_downsampled.1D'
         if enorm_file.exists():
             try:
-                data = np.loadtxt(enorm_file)
-                if label == 'Movie I':
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') &
-                        (run_info['subject'] == int(subj_id))
-                    ].sort_values(by='run_i')
-
-                    tr_start = 0
-                    valid_trs = []
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            print(f"Warning: missing {mm_file.name} for sub-{subj_id}, skipping run {run_i}")
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_run_indices[subj_id]:
-                            end = tr_start + tr_count_ds
-                            valid_trs.append(data[tr_start:end])
-                        tr_start += tr_count_ds
-
-                    if not valid_trs:
-                        continue
-                    data = np.concatenate(valid_trs, axis=0)
-
-                enorm_data = np.abs(data)
+                enorm_data = np.abs(keep_valid(np.loadtxt(enorm_file), runs))
                 records.append({
                     'subject': subj_id,
                     'dataset': label,
@@ -171,36 +114,11 @@ for label, base_path in datasets.items():
         else:
             print(f"Missing: {enorm_file.name} for {subject.name}")
 
-        # NEW: Outlier fraction (outcount_rall_downsampled.1D, produced by 03_normalize_runs.py)
+        # Outlier fraction (outcount_rall_downsampled.1D, produced by 03_normalize_runs.py)
         outcount_file = results_path / 'outcount_rall_downsampled.1D'
         if outcount_file.exists():
             try:
-                data = np.loadtxt(outcount_file)
-                if label == 'Movie I':
-                    all_runs = run_info[
-                        (run_info['dataset'] == 'NNdb') &
-                        (run_info['subject'] == int(subj_id))
-                    ].sort_values(by='run_i')
-
-                    tr_start = 0
-                    valid_trs = []
-                    for _, row in all_runs.iterrows():
-                        run_i = int(row['run_i'])
-                        mm_file = results_path / f'mm.r{str(run_i).zfill(2)}_norm_downsampled'
-                        if not mm_file.exists():
-                            print(f"Warning: missing {mm_file.name} for sub-{subj_id}, skipping run {run_i}")
-                            continue
-                        tr_count_ds = len(np.loadtxt(mm_file, skiprows=2))
-
-                        if run_i in valid_run_indices[subj_id]:
-                            end = tr_start + tr_count_ds
-                            valid_trs.append(data[tr_start:end])
-                        tr_start += tr_count_ds
-
-                    if not valid_trs:
-                        continue
-                    data = np.concatenate(valid_trs, axis=0)
-
+                data = keep_valid(np.loadtxt(outcount_file), runs)
                 records.append({
                     'subject': subj_id,
                     'dataset': label,
